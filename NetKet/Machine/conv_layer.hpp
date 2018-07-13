@@ -169,7 +169,7 @@ class Convolutional : public AbstractLayer<T> {
       flipped_neighbours_.push_back(flippedneigh);
     }
 
-    for (int i = 1; i < nv_; i++) {
+    for (int i = 0; i < nv_; i++) {
       check = flipped_neighbours_[i].size();
       if (check != kernel_size_) {
         throw InvalidInputError(
