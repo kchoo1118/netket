@@ -287,7 +287,7 @@ class GroundState {
 
   void Run() {
     opt_.Reset();
-    
+
     InitSweeps();
 
     for (int i = 0; i < niter_opt_; i++) {
@@ -378,6 +378,9 @@ class GroundState {
 
     auto jiter = json(obsmanager_);
     jiter["Iteration"] = i;
+    jiter["Acceptance"] = Acceptance;
+    jiter["GradNorm"] = grad_.norm();
+    jiter["MaxPar"] = psi_.GetParameters().array().abs().maxCoeff();
     outputjson_["Output"].push_back(jiter);
 
     if (mynode_ == 0) {
