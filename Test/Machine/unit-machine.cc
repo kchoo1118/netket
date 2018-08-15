@@ -106,7 +106,6 @@ TEST_CASE("machines compute log derivatives correctly", "[machine]") {
 
       netket::Machine<MType> machine(graph, hamiltonian, pars);
 
-      double sigma = 1.;
       machine.InitRandomPars(pars);
 
       const netket::Hilbert &hilbert = hamiltonian.GetHilbert();
@@ -167,7 +166,6 @@ TEST_CASE("machines compute logval differences correctly", "[machine]") {
 
       WfType machine(graph, hamiltonian, pars);
 
-      double sigma = 1;
       machine.InitRandomPars(pars);
 
       const netket::Hilbert &hilbert = hamiltonian.GetHilbert();
@@ -250,7 +248,6 @@ TEST_CASE("machines update look-up tables correctly", "[machine]") {
 
       WfType machine(graph, hamiltonian, pars);
 
-      double sigma = 1;
       machine.InitRandomPars(pars);
 
       const netket::Hilbert &hilbert = hamiltonian.GetHilbert();
