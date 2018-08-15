@@ -163,8 +163,8 @@ class FFNN : public AbstractMachine<T> {
   void InitRandomPars(const json &pars) override {
     json layers_par = pars["Machine"]["Layers"];
     for (int i = 0; i < nlayer_; ++i) {
-      layers_[i]->InitRandomPars(layers_par[i]);
       InfoMessage() << "Layer " << i << ": ";
+      layers_[i]->InitRandomPars(layers_par[i]);
     }
   }
 

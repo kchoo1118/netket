@@ -36,8 +36,8 @@ pars['Hamiltonian']={
 pars['Machine']={
     'Name'           : 'FFNN',
     'Alpha'          : 1,
-    'Layers'         : [{'Name':'Convolutional', 'InputChannels': 1, 'OutputChannels':2, "Distance": 2, "UseBias":True,'Activation':'Lncosh'},
-    {'Name':'Convolutional', 'InputChannels': 2, 'OutputChannels':1, "Distance": 2, "UseBias":True,'Activation':'Lncosh'},
+    'Layers'         : [{'Name':'Convolutional', 'InputChannels': 1, 'OutputChannels':2, "Distance": 2, "UseBias":True,'Activation':'Lncosh', "SigmaRand": 0.1},
+    {'Name':'Convolutional', 'InputChannels': 2, 'OutputChannels':1, "Distance": 2, "UseBias":True,'Activation':'Lncosh', "SigmaRand": 0.2},
     {'Name':'Sum', 'Inputs': 20}],
 }
 
