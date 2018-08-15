@@ -71,7 +71,7 @@ class AbstractLayer {
   @param seed is the see of the random number generator.
   @param sigma is the variance of the gaussian.
   */
-  virtual void InitRandomPars(int seed, double sigma) = 0;
+  virtual void InitRandomPars(const json &pars) = 0;
   /**
   Member function to initialise the lookup for the later. "Summary: This
   function uses the input vector v to compute the lookup lt and the output. This

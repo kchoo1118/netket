@@ -62,7 +62,9 @@ class SumOutput : public AbstractLayer<T> {
                         << out_size_ << std::endl;
   }
 
-  void InitRandomPars(int /*seed*/, double /*sigma*/) override {}
+  void InitRandomPars(const json & /*pars*/) override {
+    InfoMessage() << "no free parameters" << std::endl;
+  }
 
   int Npar() const override { return 0; }
 

@@ -132,12 +132,17 @@ class FullyConnected : public AbstractLayer<T> {
     }
   }
 
-  void InitRandomPars(int seed, double sigma) override {
+  void InitRandomPars(const json &pars) override {
+    double sigma = FieldOrDefaultVal(pars, "SigmaRand", 0.1);
+
     VectorType par(npar_);
 
-    netket::RandomGaussian(par, seed, sigma);
+    netket::RandomGaussian(par, 1232, sigma);
 
     SetParameters(par, 0);
+
+    InfoMessage() << "parameters initialized with random Gaussian: Sigma = "
+                  << sigma << std::endl;
   }
 
   int Npar() const override { return npar_; }

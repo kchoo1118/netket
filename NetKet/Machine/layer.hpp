@@ -89,8 +89,8 @@ class Layer : public AbstractLayer<T> {
     return m_->SetParameters(pars, start_idx);
   }
 
-  void InitRandomPars(int seed, double sigma) override {
-    return m_->InitRandomPars(seed, sigma);
+  void InitRandomPars(const json &pars) override {
+    return m_->InitRandomPars(pars);
   }
 
   void InitLookup(const VectorType &v, LookupType &lt,

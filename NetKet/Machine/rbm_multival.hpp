@@ -140,12 +140,18 @@ class RbmMultival : public AbstractMachine<T> {
 
   int Npar() const override { return npar_; }
 
-  void InitRandomPars(int seed, double sigma) override {
+  void InitRandomPars(const json &pars) override {
+    double sigma = FieldOrDefaultVal(pars["Machine"], "SigmaRand", 0.1);
+
     VectorType par(npar_);
 
-    netket::RandomGaussian(par, seed, sigma);
+    netket::RandomGaussian(par, 1232, sigma);
 
     SetParameters(par);
+
+    InfoMessage()
+        << "Machine parameters initialized with random Gaussian: Sigma = "
+        << sigma << std::endl;
   }
 
   void InitLookup(const Eigen::VectorXd &v, LookupType &lt) override {

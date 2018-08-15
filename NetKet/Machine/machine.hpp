@@ -92,13 +92,7 @@ class Machine : public AbstractMachine<T> {
   }
 
   void InitParameters(const json &pars) {
-    if (FieldOrDefaultVal(pars["Machine"], "InitRandom", true)) {
-      double sigma_rand = FieldOrDefaultVal(pars["Machine"], "SigmaRand", 0.1);
-      m_->InitRandomPars(1232, sigma_rand);
-
-      InfoMessage() << "Machine initialized with random parameters"
-                    << std::endl;
-    }
+    m_->InitRandomPars(pars);
 
     if (FieldExists(pars["Machine"], "InitFile")) {
       std::string filename = pars["Machine"]["InitFile"];
@@ -125,8 +119,7 @@ class Machine : public AbstractMachine<T> {
     const std::string name = FieldVal(pars["Machine"], "Name", "Machine");
 
     std::set<std::string> machines = {"RbmSpin", "RbmSpinSymm", "RbmMultival",
-                                      "FFNN", "Jastrow", "JastrowSymm"};
-
+                                      "FFNN",    "Jastrow",     "JastrowSymm"};
 
     if (machines.count(name) == 0) {
       std::stringstream s;
@@ -186,8 +179,8 @@ class Machine : public AbstractMachine<T> {
     return m_->LogValDiff(v, toflip, newconf, lt);
   }
 
-  void InitRandomPars(int seed, double sigma) override {
-    return m_->InitRandomPars(seed, sigma);
+  void InitRandomPars(const json &pars) override {
+    return m_->InitRandomPars(pars);
   }
 
   const Hilbert &GetHilbert() const { return hilbert_; }

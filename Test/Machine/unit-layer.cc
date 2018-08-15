@@ -105,7 +105,7 @@ TEST_CASE("layers compute log derivatives correctly", "[layer]") {
       netket::Machine<MType> machine(graph, hamiltonian, pars);
 
       double sigma = 1.;
-      machine.InitRandomPars(1234, sigma);
+      machine.InitRandomPars(pars);
 
       const netket::Hilbert &hilbert = hamiltonian.GetHilbert();
 
@@ -165,7 +165,7 @@ TEST_CASE("Layers update look-up tables correctly", "[layer]") {
       WfType machine(graph, hamiltonian, pars);
 
       double sigma = 1;
-      machine.InitRandomPars(1234, sigma);
+      machine.InitRandomPars(pars);
 
       const netket::Hilbert &hilbert = hamiltonian.GetHilbert();
 
