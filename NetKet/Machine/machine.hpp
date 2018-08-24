@@ -18,6 +18,8 @@
 #include <fstream>
 #include <memory>
 
+#include "Graph/graph.hpp"
+#include "Hamiltonian/hamiltonian.hpp"
 #include "abstract_machine.hpp"
 #include "ffnn.hpp"
 #include "jastrow.hpp"

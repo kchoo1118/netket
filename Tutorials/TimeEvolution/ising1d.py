@@ -21,51 +21,44 @@ pars={}
 #defining the lattice
 pars['Graph']={
     'Name'           : 'Hypercube',
-    'L'              : 20,
-    'Dimension'      : 1,
+    'L'              : 10,
+    'Dimension'      : 1 ,
     'Pbc'            : True,
 }
 
 #defining the hamiltonian
 pars['Hamiltonian']={
-    'Name'           : 'Heisenberg',
-    'TotalSz'        : 0,
+    'Name'           : 'Ising',
+    'h'              : 1.0,
 }
 
-#defining the wave function
-pars['Machine']={
-    'Name'           : 'FFNN',
-    'Alpha'          : 1,
-    'Layers'         : [{'Name':'FullyConnected', 'Inputs': 20, 'Outputs':20,"UseBias":True,'Activation':'Lncosh'}],
+# define two initial states
+initial_states = []
+fraction = 1 / 1024
+# state 0: uniform amplitude over all basis states
+initial_states.append([[fraction, .0] for _ in range(1024)])
+# state 1: exactly the first basis state
+initial_states.append([[1., .0]] + [[0., 0.] for _ in range(1023)])
+
+
+
+# Specify the parameters for the time evolution
+pars['TimeEvolution']={
+    'TimeStepper'    : 'Dopri54',
+    'AbsTol'         : 1e-9,
+    'RelTol'         : 1e-9,
+    'MatrixWrapper'  : 'Sparse',
+    'StartTime'      :  0.0,
+    'EndTime'        : 10.0,
+    'TimeStep'       :  0.5,
+    'OutputFiles'    : 'ising1d_output_%i.txt',
+# Specifiy a set of initial configurations to propagate
+    'InitialStates'  : initial_states
 }
 
-#defining the sampler
-#here we use Metropolis sampling
-#using moves from the matrix elements of the hamiltonian
-pars['Sampler']={
-    'Name'           : 'MetropolisHamiltonian',
-}
-
-# defining the Optimizer
-pars['Optimizer'] = {
-    'Name': 'Sgd',
-    'LearningRate'   : 0.01,
-}
-
-#defining the GroundState method
-#here we use the Stochastic Reconfiguration Method
-pars['GroundState']={
-    'Method'         : 'Sr',
-    'Nsamples'       : 1.0e3,
-    'NiterOpt'       : 1000,
-    'Diagshift'      : 0.01,
-    'UseIterative'   : False,
-    'OutputFile'     : 'test',
-}
-
-json_file="heisenberg1d.json"
+json_file="ising1d.json"
 with open(json_file, 'w') as outfile:
-    json.dump(pars, outfile)
+    json.dump(pars, outfile, indent=4)
 
 print("\nGenerated Json input file: ", json_file)
 print("\nNow you have two options to run NetKet: ")

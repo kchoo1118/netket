@@ -16,54 +16,48 @@
 from __future__ import print_function
 import json
 
+L = 20
 pars = {}
 
 # defining the lattice
 pars['Graph'] = {
     'Name': 'Hypercube',
-    'L': 12,
+    'L': L,
     'Dimension': 1,
     'Pbc': True,
 }
 
 # defining the hamiltonian
 pars['Hamiltonian'] = {
-    'Name': 'BoseHubbard',
-    'U': 4.0,
-    'Nmax': 3,
-    'Nbosons': 12,
+    'Name': 'Ising',
+    'h': 1.0,
 }
 
-# defining the wave function
-pars['Machine'] = {
-    'Name': 'JastrowSymm',
+sigmaxop = []
+sites = []
+for i in range(L):
+    # \sum_i sigma^x(i)
+    sigmaxop.append([[0, 1], [1, 0]])
+    sites.append([i])
+
+pars['Observables'] = {
+    'Operators': sigmaxop,
+    'ActingOn': sites,
+    'Name': 'SigmaX',
 }
 
-# defining the sampler
-# here we use Metropolis sampling
-pars['Sampler'] = {
-    'Name': 'MetropolisHamiltonian',
+
+# defining the GroundState method
+# here we use exact imaginary time propagation
+pars['GroundState'] = {
+    'Method': 'ImaginaryTimePropagation',
+    'StartTime': 0,
+    'EndTime': 20,
+    'TimeStep': 0.1,
+    'OutputFile': "test",
 }
 
-# defining the Optimizer
-# here we use AdaMax
-pars['Optimizer'] = {
-    'Name': 'Sgd',
-    'LearningRate': 0.01,
-}
-
-# defining the learning method
-# here we use the Stochastic Reconfiguration Method
-pars['Learning'] = {
-    'Method': 'Sr',
-    'Nsamples': 1.0e4,
-    'NiterOpt': 4000,
-    'Diagshift': 5.0e-3,
-    'UseIterative': False,
-    'OutputFile': 'test',
-}
-
-json_file = "bosehubbard1d.json"
+json_file = "ising1d_imag.json"
 with open(json_file, 'w') as outfile:
     json.dump(pars, outfile)
 

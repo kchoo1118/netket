@@ -4,23 +4,16 @@ import json
 
 plt.ion()
 
+#N=20
+exact=-1.274549484318e+00*20
 
-#U=1 N=10
-# exact=-16.17945609
-
-#U=4 N=10
-# exact=-9.23881058
-
-#U=10 N=10
-# exact=-3.95910804
-
-#U=4 N=12
-exact=-11.03872267
+#N=80
+# exact=-1.273321360724e+00*80
 
 while(True):
     plt.clf()
     plt.ylabel('Energy')
-    plt.xlabel('Iteration #')
+    plt.xlabel('Time $i\\tau$')
 
     iters=[]
     energy=[]
@@ -37,7 +30,7 @@ while(True):
         evarsig.append(iteration["EnergyVariance"]["Sigma"])
 
     nres=len(iters)
-    cut=100
+    cut=nres
     if(nres>cut):
 
         fitx=iters[-cut:-1]
@@ -55,7 +48,7 @@ while(True):
 
         plt.plot(fitx,p(fitx))
 
-    plt.errorbar(iters,energy,yerr=sigma,color='red')
+    plt.plot(iters,energy,color='red')
     plt.axhline(y=exact, xmin=0, xmax=iters[-1], linewidth=2, color = 'k',label='Exact')
 
 

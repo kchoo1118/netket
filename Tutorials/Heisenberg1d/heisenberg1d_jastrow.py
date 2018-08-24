@@ -36,6 +36,7 @@ pars['Hamiltonian'] = {
 # here we use a two-body Jastrow factor with translation symmetry
 pars['Machine'] = {
     'Name': 'JastrowSymm',
+    'SigmaRand': 0.01,
 }
 
 # defining the sampler
@@ -48,16 +49,17 @@ pars['Sampler'] = {
 # defining the Optimizer
 # here we use AdaMax
 pars['Optimizer'] = {
-    'Name': 'AdaMax',
+    'Name': 'Sgd',
+    'LearningRate': 0.01,
 }
 
-# defining the learning method
+# defining the GroundState method
 # here we use the Stochastic Reconfiguration Method
-pars['Learning'] = {
+pars['GroundState'] = {
     'Method': 'Sr',
-    'Nsamples': 1.0e3,
-    'NiterOpt': 4000,
-    'Diagshift': 0.1,
+    'Nsamples': 4.0e3,
+    'NiterOpt': 200,
+    'Diagshift': 0.01,
     'UseIterative': False,
     'OutputFile': 'test',
 }
