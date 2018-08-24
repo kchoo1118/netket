@@ -64,7 +64,9 @@ class JsonOutputWriter {
     if (time.has_value()) {
       data["Time"] = time.value();
     }
-    data.insert(addinfo.begin(), addinfo.end());
+    if (!addinfo.is_null()) {
+      data.insert(addinfo.begin(), addinfo.end());
+    }
 
     // Go back to replace the last characters by a comma and a new line.
     // This turns this:
