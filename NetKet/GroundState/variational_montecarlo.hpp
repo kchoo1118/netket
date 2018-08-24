@@ -370,7 +370,14 @@ class VariationalMonteCarlo {
   }
 
   void PrintOutput(int i) {
-    output_.WriteLog(i, obsmanager_);
+    auto Acceptance = sampler_.Acceptance();
+
+    json jiter;
+    jiter["Acceptance"] = Acceptance;
+    jiter["GradNorm"] = grad_.norm();
+    jiter["MaxPar"] = psi_.GetParameters().array().abs().maxCoeff();
+
+    output_.WriteLog(i, obsmanager_, nonstd::nullopt, jiter);
     output_.WriteState(i, psi_);
     MPI_Barrier(MPI_COMM_WORLD);
   }
