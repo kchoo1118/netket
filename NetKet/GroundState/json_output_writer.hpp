@@ -1,8 +1,8 @@
 #ifndef NETKET_JSON_OUTPUT_WRITER_HPP
 #define NETKET_JSON_OUTPUT_WRITER_HPP
 
-#include <cassert>
 #include <mpi.h>
+#include <cassert>
 #include <fstream>
 
 #include <nonstd/optional.hpp>
@@ -36,7 +36,8 @@ class JsonOutputWriter {
    * values)
    * @param wf The file for the wavefunction data, which is written every \p
    * freqbackup time steps.
-   * @param Frequency for saving the wavefunction. Must be positive or zero (in which case no states are save).
+   * @param Frequency for saving the wavefunction. Must be positive or zero (in
+   * which case no states are save).
    */
   JsonOutputWriter(std::ofstream log, std::ofstream wf, int freqbackup)
       : log_stream_(std::move(log)),
@@ -52,15 +53,18 @@ class JsonOutputWriter {
    * Write data about the current iteration to the log file.
    */
   void WriteLog(int iteration, const ObsManager& obsmanager,
-                nonstd::optional<double> time = nonstd::nullopt) {
+                nonstd::optional<double> time = nonstd::nullopt,
+                const json& addinfo = json()) {
     if (mpi_rank_ != 0) {
       return;
     }
     auto data = json(obsmanager);
+
     data["Iteration"] = iteration;
-    if(time.has_value()) {
-        data["Time"] = time.value();
+    if (time.has_value()) {
+      data["Time"] = time.value();
     }
+    data.insert(addinfo.begin(), addinfo.end());
 
     // Go back to replace the last characters by a comma and a new line.
     // This turns this:
@@ -69,7 +73,8 @@ class JsonOutputWriter {
     // into this:
     //     { <previous data...> },
     //
-    // This makes sure that the log file remains valid JSON after every step.
+    // This makes sure that the log file remains valid JSON after every
+    // step.
     const long pos = log_stream_.tellp();
     log_stream_.seekp(pos - 4);
     // Only write a comma after the first iteration
@@ -100,8 +105,8 @@ class JsonOutputWriter {
 
  private:
   // Member functions functions for saving the state.
-  // The first overload works for classes inheriting from AbstractMachine, the second one for
-  // Eigen matrices.
+  // The first overload works for classes inheriting from AbstractMachine, the
+  // second one for Eigen matrices.
   template <typename T>
   void SaveState_Impl(const AbstractMachine<T>& state) {
     state.Save(wf_stream_);
