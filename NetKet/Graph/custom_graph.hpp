@@ -50,10 +50,6 @@ class CustomGraph : public AbstractGraph {
   void Init(const json &pars) {
     // Try to construct from explicit graph definition
     if (FieldExists(pars, "Graph")) {
-      if (FieldExists(pars["Graph"], "AdjacencyList")) {
-        adjlist_ =
-            pars["Graph"]["AdjacencyList"].get<std::vector<std::vector<int>>>();
-      }
       if (FieldExists(pars["Graph"], "Edges")) {
         std::vector<std::vector<int>> edges =
             pars["Graph"]["Edges"].get<std::vector<std::vector<int>>>();
@@ -62,6 +58,10 @@ class CustomGraph : public AbstractGraph {
       if (FieldExists(pars["Graph"], "Size")) {
         assert(pars["Graph"]["Size"] > 0);
         adjlist_.resize(pars["Graph"]["Size"]);
+      }
+      if (FieldExists(pars["Graph"], "AdjacencyList")) {
+        adjlist_ =
+            pars["Graph"]["AdjacencyList"].get<std::vector<std::vector<int>>>();
       }
     } else if (FieldExists(pars, "Hilbert")) {
       Hilbert hilbert(pars);
@@ -180,7 +180,7 @@ class CustomGraph : public AbstractGraph {
 
   // Returns map of the edge and its respective color
   const ColorMap &EdgeColors() const override { return eclist_; }
-  
+
  private:
   bool ComputeConnected() const {
     const int start = 0;  // arbitrary node
