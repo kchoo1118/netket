@@ -55,19 +55,20 @@ class JsonOutputWriter {
   void WriteLog(int iteration, const ObsManager& obsmanager,
                 nonstd::optional<double> time = nonstd::nullopt,
                 const json& addinfo = json()) {
-    if (mpi_rank_ != 0) {
-      return;
-    }
     auto data = json(obsmanager);
 
     data["Iteration"] = iteration;
     if (time.has_value()) {
       data["Time"] = time.value();
     }
+
     if (!addinfo.is_null()) {
       data.insert(addinfo.begin(), addinfo.end());
     }
 
+    if (mpi_rank_ != 0) {
+      return;
+    }
     // Go back to replace the last characters by a comma and a new line.
     // This turns this:
     //     { <previous data...> }
