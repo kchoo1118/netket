@@ -189,11 +189,9 @@ class VariationalMonteCarlo {
     }
 
     vsamp_.resize(nsamples_node_, psi_.Nvisible());
-    std::cerr << "========" << std::endl;
     for (int i = 0; i < nsamples_node_; i++) {
       sampler_.Sweep();
       vsamp_.row(i) = sampler_.Visible();
-      std::cerr << psi_.LogVal(vsamp_.row(i)) << std::endl;
     }
   }
 

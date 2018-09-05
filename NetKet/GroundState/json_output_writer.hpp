@@ -24,10 +24,12 @@ class JsonOutputWriter {
     const std::string filebase = FieldVal(pars, "OutputFile");
     std::ofstream log{filebase + ".log"};
     std::ofstream wf{filebase + ".wf"};
+    std::string wf_filename = filebase + ".wf";
 
     const int freqbackup = FieldOrDefaultVal(pars, "SaveEvery", 50);
 
-    return JsonOutputWriter(std::move(log), std::move(wf), freqbackup);
+    return JsonOutputWriter(std::move(log), std::move(wf), freqbackup,
+                            wf_filename);
   }
 
   /**
@@ -39,9 +41,11 @@ class JsonOutputWriter {
    * @param Frequency for saving the wavefunction. Must be positive or zero (in
    * which case no states are save).
    */
-  JsonOutputWriter(std::ofstream log, std::ofstream wf, int freqbackup)
+  JsonOutputWriter(std::ofstream log, std::ofstream wf, int freqbackup,
+                   std::string wf_file)
       : log_stream_(std::move(log)),
         wf_stream_(std::move(wf)),
+        wf_filename_(wf_file),
         freqbackup_(freqbackup) {
     assert(freqbackup >= 0);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank_);
@@ -112,7 +116,7 @@ class JsonOutputWriter {
   // second one for Eigen matrices.
   template <typename T>
   void SaveState_Impl(const AbstractMachine<T>& state) {
-    state.Save(wf_stream_);
+    state.Save(wf_filename_);
   }
 
   template <typename T, int S1, int S2>
@@ -126,6 +130,7 @@ class JsonOutputWriter {
 
   std::ofstream log_stream_;
   std::ofstream wf_stream_;
+  std::string wf_filename_;
 
   int freqbackup_;
   int mpi_rank_;
