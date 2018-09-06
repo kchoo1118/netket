@@ -182,6 +182,7 @@ class VariationalMonteCarlo {
   }
 
   void Sample() {
+    obsmanager_.Reset("LogVal");
     sampler_.Reset();
 
     for (int i = 0; i < ndiscardedsamples_; i++) {
@@ -192,6 +193,7 @@ class VariationalMonteCarlo {
     for (int i = 0; i < nsamples_node_; i++) {
       sampler_.Sweep();
       vsamp_.row(i) = sampler_.Visible();
+      obsmanager_.Push("LogVal", std::abs(psi_.LogVal(vsamp_.row(i))));
     }
   }
 
