@@ -182,7 +182,7 @@ class VariationalMonteCarlo {
   }
 
   void Sample() {
-    obsmanager_.Reset("LogVal");
+    // obsmanager_.Reset("LogVal");
     sampler_.Reset();
 
     for (int i = 0; i < ndiscardedsamples_; i++) {
@@ -193,7 +193,7 @@ class VariationalMonteCarlo {
     for (int i = 0; i < nsamples_node_; i++) {
       sampler_.Sweep();
       vsamp_.row(i) = sampler_.Visible();
-      obsmanager_.Push("LogVal", std::abs(psi_.LogVal(vsamp_.row(i))));
+      // obsmanager_.Push("LogVal", std::abs(psi_.LogVal(vsamp_.row(i))));
     }
   }
 
@@ -377,6 +377,7 @@ class VariationalMonteCarlo {
     jiter["Acceptance"] = Acceptance;
     jiter["GradNorm"] = grad_.norm();
     jiter["MaxPar"] = psi_.GetParameters().array().abs().maxCoeff();
+    jiter["MaxEloc"] = elocs_.array().abs().maxCoeff();
 
     output_.WriteLog(i, obsmanager_, nonstd::nullopt, jiter);
     output_.WriteState(i, psi_);
