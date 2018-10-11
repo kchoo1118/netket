@@ -15,6 +15,7 @@
 #ifndef NETKET_ACTIVATIONS_HPP
 #define NETKET_ACTIVATIONS_HPP
 
+#include <math.h>
 #include <Eigen/Dense>
 #include <complex>
 #include <iostream>
@@ -37,7 +38,7 @@ class AbstractActivation {
   // F = dL/dA is the derivative of A wrt the output L = log(psi(v))
   // G is the place to write the output i.e. G = dL/dZ = dL/dA * dA/dZ
   virtual void ApplyJacobian(const VectorType &Z, const VectorType &A,
-                                    const VectorType &F, VectorType &G) = 0;
+                             const VectorType &F, VectorType &G) = 0;
   virtual ~AbstractActivation() {}
 };
 
@@ -82,6 +83,35 @@ class Identity : public AbstractActivation {
   inline void ApplyJacobian(const VectorType & /*Z*/, const VectorType & /*A*/,
                             const VectorType &F, VectorType &G) override {
     G.noalias() = F;
+  }
+};
+
+class Relu : public AbstractActivation {
+ private:
+  using VectorType = typename AbstractActivation::VectorType;
+
+  double theta1_ = std::atan(1) * 3;
+  double theta2_ = -std::atan(1);
+
+ public:
+  // A = Z
+  inline void operator()(const VectorType &Z, VectorType &A) override {
+    for (std::size_t i = 0; i < Z.size(); ++i) {
+      A(i) =
+          (std::arg(Z(i)) < theta1_) && (std::arg(Z(i)) > theta2_) ? Z(i) : 0.0;
+    }
+  }
+
+  // Apply the (derivative of activation function) matrix J to a vector F
+  // A = Z
+  // J = dA / dZ = I
+  // G = J * F = F
+  inline void ApplyJacobian(const VectorType &Z, const VectorType & /*A*/,
+                            const VectorType &F, VectorType &G) override {
+    for (std::size_t i = 0; i < Z.size(); ++i) {
+      G(i) =
+          (std::arg(Z(i)) < theta1_) && (std::arg(Z(i)) > theta2_) ? F(i) : 0.0;
+    }
   }
 };
 
@@ -154,13 +184,18 @@ class Activation : public AbstractActivation {
 
       InfoMessage() << "Activation: "
                     << "Tanh" << std::endl;
+    } else if (pars["Activation"] == "Relu") {
+      m_ = Ptype(new Relu());
+
+      InfoMessage() << "Activation: "
+                    << "Relu" << std::endl;
     }
   }
 
   void CheckInput(const json &pars) {
     const std::string name = FieldVal(pars, "Activation");
 
-    std::set<std::string> layers = {"Lncosh", "Identity", "Tanh"};
+    std::set<std::string> layers = {"Lncosh", "Identity", "Tanh", "Relu"};
 
     if (layers.count(name) == 0) {
       std::stringstream s;
