@@ -377,7 +377,6 @@ class VariationalMonteCarlo {
     jiter["Acceptance"] = Acceptance;
     jiter["GradNorm"] = grad_.norm();
     jiter["MaxPar"] = psi_.GetParameters().array().abs().maxCoeff();
-    jiter["MaxEloc"] = elocs_.array().abs().maxCoeff();
 
     output_.WriteLog(i, obsmanager_, nonstd::nullopt, jiter);
     output_.WriteState(i, psi_);
