@@ -23,6 +23,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "Machine/lanczos.hpp"
 #include "Machine/machine.hpp"
 #include "Observable/observable.hpp"
 #include "Optimizer/optimizer.hpp"
@@ -40,17 +41,17 @@ namespace netket {
 // 1) Stochastic reconfiguration optimizer
 //   both direct and sparse version
 // 2) Gradient Descent optimizer
+template <class WfType>
 class VariationalMonteCarlo {
   using GsType = std::complex<double>;
 
-  using VectorT =
-      Eigen::Matrix<typename Machine<GsType>::StateType, Eigen::Dynamic, 1>;
-  using MatrixT = Eigen::Matrix<typename Machine<GsType>::StateType,
-                                Eigen::Dynamic, Eigen::Dynamic>;
+  using VectorT = Eigen::Matrix<typename WfType::StateType, Eigen::Dynamic, 1>;
+  using MatrixT =
+      Eigen::Matrix<typename WfType::StateType, Eigen::Dynamic, Eigen::Dynamic>;
 
   Hamiltonian &ham_;
-  Sampler<Machine<GsType>> &sampler_;
-  Machine<GsType> &psi_;
+  Sampler<WfType> &sampler_;
+  WfType &psi_;
 
   std::vector<std::vector<int>> connectors_;
   std::vector<std::vector<double>> newconfs_;
@@ -93,7 +94,7 @@ class VariationalMonteCarlo {
 
  public:
   // JSON constructor
-  VariationalMonteCarlo(Hamiltonian &ham, Sampler<Machine<GsType>> &sampler,
+  VariationalMonteCarlo(Hamiltonian &ham, Sampler<WfType> &sampler,
                         Optimizer &opt, const json &pars)
       : ham_(ham),
         sampler_(sampler),

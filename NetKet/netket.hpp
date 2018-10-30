@@ -22,6 +22,7 @@
 #include "Headers/welcome.hpp"
 #include "Hilbert/hilbert.hpp"
 #include "Lookup/lookup.hpp"
+#include "Machine/lanczos.hpp"
 #include "Machine/machine.hpp"
 #include "Observable/observable.hpp"
 #include "Optimizer/optimizer.hpp"

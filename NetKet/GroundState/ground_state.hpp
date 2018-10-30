@@ -55,15 +55,27 @@ class GroundState {
       Sampler<MachineType> sampler(graph, hamiltonian, machine, pars);
       Optimizer optimizer(pars);
 
-      VariationalMonteCarlo vmc(hamiltonian, sampler, optimizer, pars);
+      VariationalMonteCarlo<MachineType> vmc(hamiltonian, sampler, optimizer,
+                                             pars);
+      vmc.Run();
+
+    } else if (method_name == "Lanczos") {
+      using MachineType = Lanczos<std::complex<double>>;
+      MachineType machine(graph, hamiltonian, pars);
+
+      Sampler<MachineType> sampler(graph, hamiltonian, machine, pars);
+      Optimizer optimizer(pars);
+
+      VariationalMonteCarlo<MachineType> vmc(hamiltonian, sampler, optimizer,
+                                             pars);
       vmc.Run();
 
     } else if (method_name == "ImaginaryTimePropagation") {
       auto observables = Observable::FromJson(hamiltonian.GetHilbert(), pars);
 
       const auto pars_gs = FieldVal(pars, "GroundState");
-      auto driver = ImaginaryTimePropagation::FromJson(hamiltonian, observables,
-                                                       pars_gs);
+      auto driver =
+          ImaginaryTimePropagation::FromJson(hamiltonian, observables, pars_gs);
 
       // Start with random initial vector
       Eigen::VectorXcd initial =
