@@ -96,7 +96,7 @@ class Relu : public AbstractActivation {
  public:
   // A = Z
   inline void operator()(const VectorType &Z, VectorType &A) override {
-    for (std::size_t i = 0; i < Z.size(); ++i) {
+    for (int i = 0; i < Z.size(); ++i) {
       A(i) =
           (std::arg(Z(i)) < theta1_) && (std::arg(Z(i)) > theta2_) ? Z(i) : 0.0;
     }
@@ -108,7 +108,7 @@ class Relu : public AbstractActivation {
   // G = J * F = F
   inline void ApplyJacobian(const VectorType &Z, const VectorType & /*A*/,
                             const VectorType &F, VectorType &G) override {
-    for (std::size_t i = 0; i < Z.size(); ++i) {
+    for (int i = 0; i < Z.size(); ++i) {
       G(i) =
           (std::arg(Z(i)) < theta1_) && (std::arg(Z(i)) > theta2_) ? F(i) : 0.0;
     }
