@@ -15,10 +15,10 @@
 #ifndef NETKET_GROUND_STATE_HPP
 #define NETKET_GROUND_STATE_HPP
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
-#include <map>
 
 #include "Hamiltonian/MatrixWrapper/matrix_wrapper.hpp"
 #include "Observable/observable.hpp"
@@ -26,13 +26,14 @@
 
 #include "exact_diagonalization.hpp"
 #include "imaginary_time.hpp"
+#include "variational_exact.hpp"
 #include "variational_montecarlo.hpp"
 
 namespace netket {
 
 class GroundState {
  public:
-  explicit GroundState(const json &pars) {
+  explicit GroundState(const json& pars) {
     std::string method_name;
 
     if (FieldExists(pars, "GroundState")) {
@@ -61,6 +62,16 @@ class GroundState {
 
       VariationalMonteCarlo<MachineType> vmc(hamiltonian, sampler, optimizer,
                                              pars);
+      vmc.Run();
+
+    } else if (method_name == "GdExact" || method_name == "SrExact") {
+      using MachineType = Machine<std::complex<double>>;
+      MachineType machine(graph, hamiltonian, pars);
+
+      Sampler<MachineType> sampler(graph, hamiltonian, machine, pars);
+      Optimizer optimizer(pars);
+
+      VariationalExact<MachineType> vmc(hamiltonian, sampler, optimizer, pars);
       vmc.Run();
 
     } else if (method_name == "Lanczos") {
@@ -103,9 +114,8 @@ class GroundState {
 
       // Compute eigenvalues and groundstate, if needed
       eddetail::result_t edresult;
-      std::string matrix_format =
-        FieldOrDefaultVal<json, std::string>(pars["GroundState"],
-                                             "MatrixFormat", "Sparse");
+      std::string matrix_format = FieldOrDefaultVal<json, std::string>(
+          pars["GroundState"], "MatrixFormat", "Sparse");
       bool get_groundstate = FieldExists(pars, "Observables");
 
       if (matrix_format == "Sparse") {
