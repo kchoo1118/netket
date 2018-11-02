@@ -393,6 +393,8 @@ class VariationalMonteCarlo {
     // the ObsManager to JSON performs a MPI reduction.
     auto obs_data = json(obsmanager_);
     obs_data["Acceptance"] = sampler_.Acceptance();
+    obs_data["GradNorm"] = grad_.norm();
+    obs_data["MaxPar"] = psi_.GetParameters().array().abs().maxCoeff();
 
     if (output_.has_value()) {  // output_.has_value() iff the MPI rank is 0, so
                                 // the output is only written once
