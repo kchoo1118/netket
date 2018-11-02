@@ -73,7 +73,8 @@ class VariationalMonteCarlo {
   int totalnodes_;
   int mynode_;
 
-  JsonOutputWriter output_;
+  // This optional will contain a value iff the MPI rank is 0.
+  nonstd::optional<JsonOutputWriter> output_;
 
   Optimizer &opt_;
 
@@ -81,6 +82,8 @@ class VariationalMonteCarlo {
   ObsManager obsmanager_;
 
   bool dosr_;
+
+  bool use_cholesky_;
 
   int nsamples_;
   int nsamples_node_;
@@ -99,7 +102,6 @@ class VariationalMonteCarlo {
       : ham_(ham),
         sampler_(sampler),
         psi_(sampler.Psi()),
-        output_(InitOutput(pars)),
         opt_(opt),
         obs_(Observable::FromJson(ham.GetHilbert(), pars)),
         elocvar_(0.) {
@@ -111,13 +113,16 @@ class VariationalMonteCarlo {
     } else {
       Init(pars);
     }
+    InitOutput(pars);
   }
 
-  static JsonOutputWriter InitOutput(const json &pars) {
+  void InitOutput(const json &pars) {
     // DEPRECATED (to remove for v2.0.0)
     auto pars_gs = FieldExists(pars, "GroundState") ? pars["GroundState"]
                                                     : pars["Learning"];
-    return JsonOutputWriter::FromJson(pars_gs);
+    if (mynode_ == 0) {
+      output_ = JsonOutputWriter::FromJson(pars_gs);
+    }
   }
 
   void Init(const json &pars) {
@@ -154,15 +159,21 @@ class VariationalMonteCarlo {
           FieldOrDefaultVal(pars["GroundState"], "RescaleShift", false);
       bool use_iterative =
           FieldOrDefaultVal(pars["GroundState"], "UseIterative", false);
-
+      use_cholesky_ =
+          FieldOrDefaultVal(pars["GroundState"], "UseCholesky", true);
       setSrParameters(diagshift, rescale_shift, use_iterative);
     }
 
     if (dosr_) {
       InfoMessage() << "Using the Stochastic reconfiguration method"
                     << std::endl;
+
       if (use_iterative_) {
         InfoMessage() << "With iterative solver" << std::endl;
+      } else {
+        if (use_cholesky_) {
+          InfoMessage() << "Using Cholesky decomposition" << std::endl;
+        }
       }
     } else {
       InfoMessage() << "Using a gradient-descent based method" << std::endl;
@@ -318,10 +329,17 @@ class VariationalMonteCarlo {
         S += Eigen::MatrixXd::Identity(pars.size(), pars.size()) *
              sr_diag_shift_;
 
-        Eigen::FullPivHouseholderQR<Eigen::MatrixXcd> qr(S.rows(), S.cols());
-        qr.setThreshold(1.0e-6);
-        qr.compute(S);
-        const Eigen::VectorXcd deltaP = qr.solve(b);
+        Eigen::VectorXcd deltaP;
+        if (use_cholesky_ == false) {
+          Eigen::FullPivHouseholderQR<Eigen::MatrixXcd> qr(S.rows(), S.cols());
+          qr.setThreshold(1.0e-6);
+          qr.compute(S);
+          deltaP = qr.solve(b);
+        } else {
+          Eigen::LLT<Eigen::MatrixXcd> llt(S.rows());
+          llt.compute(S);
+          deltaP = llt.solve(b);
+        }
         // Eigen::VectorXcd deltaP=S.jacobiSvd(ComputeThinU |
         // ComputeThinV).solve(b);
 
@@ -371,15 +389,16 @@ class VariationalMonteCarlo {
   }
 
   void PrintOutput(int i) {
-    auto Acceptance = sampler_.Acceptance();
+    // Note: This has to be called in all MPI processes, because converting
+    // the ObsManager to JSON performs a MPI reduction.
+    auto obs_data = json(obsmanager_);
+    obs_data["Acceptance"] = sampler_.Acceptance();
 
-    json jiter;
-    jiter["Acceptance"] = Acceptance;
-    jiter["GradNorm"] = grad_.norm();
-    jiter["MaxPar"] = psi_.GetParameters().array().abs().maxCoeff();
-
-    output_.WriteLog(i, obsmanager_, nonstd::nullopt, jiter);
-    output_.WriteState(i, psi_);
+    if (output_.has_value()) {  // output_.has_value() iff the MPI rank is 0, so
+                                // the output is only written once
+      output_->WriteLog(i, obs_data);
+      output_->WriteState(i, psi_);
+    }
     MPI_Barrier(MPI_COMM_WORLD);
   }
 
