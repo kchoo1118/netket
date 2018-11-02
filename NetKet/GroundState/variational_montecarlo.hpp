@@ -176,7 +176,6 @@ class VariationalMonteCarlo {
 
   void InitSweeps() {
     sampler_.Reset();
-
     for (int i = 0; i < ninitsamples_; i++) {
       sampler_.Sweep();
     }
@@ -285,10 +284,10 @@ class VariationalMonteCarlo {
 
   void Run() {
     opt_.Reset();
-
     InitSweeps();
-
+    CheckDerLog();
     for (int i = 0; i < niter_opt_; i++) {
+      // CheckDerLog();
       Sample();
 
       Gradient();
@@ -390,6 +389,37 @@ class VariationalMonteCarlo {
     sr_rescale_shift_ = rescale_shift;
     use_iterative_ = use_iterative;
     dosr_ = true;
+  }
+
+  void CheckDerLog(double eps = 1.0e-4) {
+    std::cout << "# Debugging Derivatives of Wave-Function Logarithm"
+              << std::endl;
+    std::flush(std::cout);
+
+    sampler_.Reset(true);
+    auto ders = psi_.DerLog(sampler_.Visible());
+    auto pars = psi_.GetParameters();
+    for (int i = 0; i < npar_; i++) {
+      pars(i) += eps;
+      psi_.SetParameters(pars);
+      std::complex<double> valp = psi_.LogVal(sampler_.Visible());
+
+      pars(i) -= 2 * eps;
+      psi_.SetParameters(pars);
+      std::complex<double> valm = psi_.LogVal(sampler_.Visible());
+
+      pars(i) += eps;
+
+      std::complex<double> numder = (-valm + valp) / (eps * 2);
+
+      if (std::abs(numder - ders(i)) > eps * eps) {
+        std::cerr << " Possible error on parameter " << i
+                  << ". Expected: " << ders(i) << " Found: " << numder
+                  << std::endl;
+      }
+    }
+    std::cout << "# Test completed" << std::endl;
+    std::flush(std::cout);
   }
 };
 

@@ -15,6 +15,7 @@
 #include "abstract_layer.hpp"
 #include "activations.hpp"
 #include "conv_layer.hpp"
+#include "conv_square_layer.hpp"
 #include "fullconn_layer.hpp"
 #include "sum_output.hpp"
 
@@ -58,6 +59,16 @@ class Layer : public AbstractLayer<T> {
       } else if (pars["Activation"] == "Relu") {
         m_ = Ptype(new Convolutional<Relu, T>(graph, pars));
       }
+    } else if (pars["Name"] == "SquareConvolutional") {
+      if (pars["Activation"] == "Lncosh") {
+        m_ = Ptype(new ConvolutionalSquare<Lncosh, T>(pars));
+      } else if (pars["Activation"] == "Identity") {
+        m_ = Ptype(new ConvolutionalSquare<Identity, T>(pars));
+      } else if (pars["Activation"] == "Tanh") {
+        m_ = Ptype(new ConvolutionalSquare<Tanh, T>(pars));
+      } else if (pars["Activation"] == "Relu") {
+        m_ = Ptype(new ConvolutionalSquare<Relu, T>(pars));
+      }
     } else if (pars["Name"] == "Sum") {
       m_ = Ptype(new SumOutput<T>(pars));
     }
@@ -70,7 +81,7 @@ class Layer : public AbstractLayer<T> {
     const std::string name = FieldVal(pars, "Name");
 
     std::set<std::string> layers = {"FullyConnected", "Convolutional",
-                                    "Symmetric", "Sum"};
+                                    "Symmetric", "Sum", "SquareConvolutional"};
 
     if (layers.count(name) == 0) {
       std::stringstream s;
