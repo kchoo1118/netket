@@ -17,6 +17,7 @@
 
 #include <Eigen/Dense>
 #include <Eigen/IterativeLinearSolvers>
+#include <algorithm>
 #include <complex>
 #include <fstream>
 #include <iomanip>
@@ -56,7 +57,8 @@ class VariationalExact {
   // Essential for exact evaluations
   const Hilbert &hilbert_;
   const HilbertIndex hilbert_index_;
-  const int dim_;
+  int dim_;
+  int nv_;
 
   std::vector<std::vector<int>> connectors_;
   std::vector<std::vector<double>> newconfs_;
@@ -113,10 +115,19 @@ class VariationalExact {
         psi_(sampler.Psi()),
         hilbert_(ham.GetHilbert()),
         hilbert_index_(hilbert_),
-        dim_(hilbert_index_.NStates()),
+        nv_(psi_.Nvisible()),
         opt_(opt),
         obs_(Observable::FromJson(ham.GetHilbert(), pars)),
         elocvar_(0.) {
+    // compute dim_
+    dim_ = 1;
+    for (int i = 0; i < nv_ / 2; ++i) {
+      dim_ *= (nv_ - i);
+    }
+    for (int i = 0; i < nv_ / 2; ++i) {
+      dim_ /= (i + 1);
+    }
+
     // DEPRECATED (to remove for v2.0.0)
     if (FieldExists(pars, "Learning")) {
       auto pars1 = pars;
@@ -209,11 +220,40 @@ class VariationalExact {
     }
   }
 
-  void Sample() {
+  void GetConfig() {
     vsamp_.resize(dim_, psi_.Nvisible());
-    for (int i = 0; i < dim_; ++i) {
-      vsamp_.row(i) = hilbert_index_.NumberToState(i);
+
+    std::vector<int> myints;
+    for (int i = 0; i < nv_ / 2; ++i) {
+      myints.push_back(1);
+      myints.push_back(-1);
     }
+
+    std::sort(myints.begin(), myints.end());
+
+    int count = 0;
+    do {
+      Eigen::VectorXd v(nv_);
+      v.setZero();
+
+      for (int j = 0; j < nv_; j++) {
+        v(j) = myints[j];
+      }
+
+      vsamp_.row(count) = v;
+      // cout << "config " << count << " = " << v.transpose() << endl;
+      count++;
+    } while (std::next_permutation(myints.begin(), myints.end()));
+    // InfoMessage() << "Full set of configurations obtained" << std::endl;
+    // InfoMessage() << "Hilbert space dimensions = " << dim_ << std::endl;
+  }
+
+  void Sample() {
+    // vsamp_.resize(dim_, psi_.Nvisible());
+    // for (int i = 0; i < dim_; ++i) {
+    //   vsamp_.row(i) = hilbert_index_.NumberToState(i);
+    // }
+    GetConfig();
     InfoMessage() << "Full set of configurations obtained" << std::endl;
     InfoMessage() << "Hilbert space dimensions = " << dim_ << std::endl;
   }
@@ -266,6 +306,8 @@ class VariationalExact {
     //   obsmanager_.Push("EnergyVariance", x);
     // }
     double x = std::abs(((psi2_.asDiagonal() * elocs_).adjoint() * elocs_)(0));
+    std::cout << "elocmean = " << elocmean_ << std::endl;
+    std::cout << "x = " << x << std::endl;
     obsmanager_.Push("EnergyVariance", x);
 
     grad_ = 2. * (Ok_.adjoint() * elocs_);
