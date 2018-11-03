@@ -427,30 +427,28 @@ class ConvolutionalSquare : public AbstractLayer<T> {
     der_w.noalias() = lowered_image2_.transpose() * dLz_reshaped;
 
     // Compute d(L) / d_in = W * [d(L) / d(z)]
-    // int kout = 0;
-    // for (int out = 0; out < out_channels_; ++out) {
-    //   for (int in = 0; in < in_channels_; ++in) {
-    //     for (int k = 0; k < kernel_size_; ++k) {
-    //       flipped_kernels_(k + kout, in) = kernels_(k + in * kernel_size_,
-    //       out);
-    //     }
-    //   }
-    //   kout += kernel_size_;
-    // }
-    // std::cout << "in" << std::endl;
-    // for (int i = 0; i < nv_; i++) {
-    //   int j = 0;
-    //   for (auto n : flipped_nodes_[i]) {
-    //     for (int out = 0; out < out_channels_; ++out) {
-    //       lowered_der_(out * kernel_size_ + j, i) =
-    //           n >= 0 ? dLz(out * nout_ + n) : 0;
-    //     }
-    //     j++;
-    //   }
-    // }
+    int kout = 0;
+    for (int out = 0; out < out_channels_; ++out) {
+      for (int in = 0; in < in_channels_; ++in) {
+        for (int k = 0; k < kernel_size_; ++k) {
+          flipped_kernels_(k + kout, in) = kernels_(k + in * kernel_size_, out);
+        }
+      }
+      kout += kernel_size_;
+    }
+    for (int i = 0; i < nv_; i++) {
+      int j = 0;
+      for (auto n : flipped_nodes_[i]) {
+        for (int out = 0; out < out_channels_; ++out) {
+          lowered_der_(out * kernel_size_ + j, i) =
+              n >= 0 ? dLz(out * nout_ + n) : 0;
+        }
+        j++;
+      }
+    }
     din.resize(in_size_);
-    // Eigen::Map<MatrixType> der_in(din.data(), nv_, in_channels_);
-    // der_in.noalias() = lowered_der_.transpose() * flipped_kernels_;
+    Eigen::Map<MatrixType> der_in(din.data(), nv_, in_channels_);
+    der_in.noalias() = lowered_der_.transpose() * flipped_kernels_;
   }
 
   void to_json(json &pars) const override {
