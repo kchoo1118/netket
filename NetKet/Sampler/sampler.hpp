@@ -26,6 +26,7 @@
 #include "exact_sampler.hpp"
 #include "metropolis_exchange.hpp"
 #include "metropolis_exchange_pt.hpp"
+#include "metropolis_global.hpp"
 #include "metropolis_hamiltonian.hpp"
 #include "metropolis_hamiltonian_pt.hpp"
 #include "metropolis_hop.hpp"
@@ -91,6 +92,8 @@ class Sampler : public AbstractSampler<WfType> {
         s_ = Ptype(new MetropolisExchangePt<WfType>(graph, psi, pars));
       } else if (pars["Sampler"]["Name"] == "MetropolisHop") {
         s_ = Ptype(new MetropolisHop<WfType>(graph, psi, pars));
+      } else if (pars["Sampler"]["Name"] == "MetropolisGlobal") {
+        s_ = Ptype(new MetropolisGlobal<WfType>(graph, psi, pars));
       }
     }
   }
@@ -118,7 +121,7 @@ class Sampler : public AbstractSampler<WfType> {
           "MetropolisExchange",    "MetropolisExchangePt",
           "MetropolisHamiltonian", "MetropolisHamiltonianPt",
           "MetropolisHop",         "Exact",
-      };
+          "MetropolisGlobal"};
 
       const auto name = pars["Sampler"]["Name"];
 
