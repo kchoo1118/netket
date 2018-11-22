@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "abstract_layer.hpp"
-#include "activations.hpp"
-#include "conv_layer.hpp"
-#include "conv_square_layer.hpp"
-#include "fullconn_layer.hpp"
-#include "sum_output.hpp"
+#include "Layer/abstract_layer.hpp"
+#include "Layer/activations.hpp"
+#include "Layer/conv_layer.hpp"
+#include "Layer/conv_square_layer.hpp"
+#include "Layer/fullconn_layer.hpp"
+#include "Layer/sum_output.hpp"
 
 #ifndef NETKET_LAYER_HPP
 #define NETKET_LAYER_HPP
