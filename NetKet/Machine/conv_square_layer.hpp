@@ -44,28 +44,25 @@ class ConvolutionalSquare : public AbstractLayer<T> {
 
   bool usebias_;  // boolean to turn or off bias
 
-  int nv_;
-  int nout_;
-  int input_image_size_;
-  int output_image_size_;
-  int stride_;
-  int filter_size_;  // square filter length
-  int kernel_size_;  // number of parameters in filter = (filter length)^2
-  int in_channels_;
-  int in_size_;
-  int out_channels_;
-  int out_size_;
-  int npar_;
+  int nv_;            // number of units in the image
+  int l_;             // length of input hypercube
+  int dim_;           // dimension of hypercube
+  int in_channels_;   // number of input channels
+  int in_size_;       // input size = in_channels_ * nv_;
+  int out_channels_;  // number of output channels
+  int out_size_;      // output size = out_channels_ * nout_;
+  int npar_;          // number of parameters in layer
 
+  int kernel_length_;  // length of kernel
+  int kernel_size_;    // Size of convolutional kernel
   std::vector<std::vector<int>>
       neighbours_;  // list of neighbours for each site
   std::vector<std::vector<int>>
-      flipped_nodes_;   // list of reverse neighbours for each site
-  MatrixType kernels_;  // Weight parameters, W(in_size x out_size)
-  VectorType bias_;     // Bias parameters, b(out_size x 1)
+      flipped_neighbours_;  // list of reverse neighbours for each site
+  MatrixType kernels_;      // Weight parameters, W(in_size x out_size)
+  VectorType bias_;         // Bias parameters, b(out_size x 1)
 
-  // Note that input of this layer is also the output of
-  // previous layer
+  std::string name_;
 
   MatrixType lowered_image_;
   MatrixType lowered_image2_;
@@ -77,44 +74,101 @@ class ConvolutionalSquare : public AbstractLayer<T> {
   using LookupType = typename AbstractLayer<T>::LookupType;
 
   /// Constructor
-  ConvolutionalSquare(const int image_size, const int stride,
-                      const int filter_size, const int input_channel,
-                      const int output_channel, const bool use_bias = true)
-      : activation_(),
-        usebias_(use_bias),
-        input_image_size_(image_size),
-        stride_(stride),
-        filter_size_(filter_size),
-        in_channels_(input_channel),
-        out_channels_(output_channel) {
+  ConvolutionalSquare(const int length, const int dim, const int input_channels,
+                      const int output_channels, const int kernel_length = 1,
+                      const bool use_bias = true)
+      : usebias_(use_bias),
+        l_(length),
+        dim_(dim),
+        in_channels_(input_channels),
+        out_channels_(output_channels),
+        kernel_length_(kernel_length) {
     Init();
   }
 
   explicit ConvolutionalSquare(const json &pars) : activation_() {
-    usebias_ = FieldOrDefaultVal(pars, "UseBias", true);
-    input_image_size_ = FieldVal(pars, "ImageSize");
-    stride_ = FieldVal(pars, "Stride");
-    filter_size_ = FieldVal(pars, "FilterSize");
+    l_ = FieldVal(pars, "Length");
+    dim_ = FieldVal(pars, "Dim");
+    kernel_length_ = FieldVal(pars, "KernelLength");
+
     in_channels_ = FieldVal(pars, "InputChannels");
+    in_size_ = in_channels_ * nv_;
+
     out_channels_ = FieldVal(pars, "OutputChannels");
+    out_size_ = out_channels_ * nv_;
+
+    usebias_ = FieldOrDefaultVal(pars, "UseBias", true);
+
     Init();
   }
 
   void Init() {
-    nv_ = input_image_size_ * input_image_size_;
-    in_size_ = in_channels_ * nv_;
-
-    // Check that stride_ is compatible with input_image_size_
-    if (input_image_size_ % stride_ != 0) {
+    // Check that kernel_length_ is smaller than or equal input image length_
+    if (kernel_length_ > l_) {
       throw InvalidInputError(
-          "Stride size is incompatiple with input image size: they should be "
-          "commensurate");
+          "kernel_length must be at most as large as input image length, "
+          "length");
     }
-    output_image_size_ = input_image_size_ / stride_;
-    nout_ = output_image_size_ * output_image_size_;
-    out_size_ = out_channels_ * nout_;
+    // Compute the image sizes
+    nv_ = 1;
+    kernel_size_ = 1;
+    for (int i = 0; i < dim_; ++i) {
+      nv_ *= l_;
+      kernel_size_ *= (2 * kernel_length_ + 1);
+    }
+    in_size_ = in_channels_ * nv_;
+    out_size_ = out_channels_ * nv_;
 
-    kernel_size_ = filter_size_ * filter_size_;
+    // Construct neighbourhood of all nodes to be acted on by a kernel, i.e.
+    // kernel(k) will act on the node neighbours_[i][k] of the
+    // input image to give a value at node i in the output image.
+    std::vector<Eigen::VectorXi> trans;
+    Eigen::VectorXi offset(dim_);
+    offset.setConstant(-kernel_length_);
+    for (int i = 0; i < kernel_size_; ++i) {
+      trans.push_back(Site2Coord(i, 2 * kernel_length_ + 1) + offset);
+    }
+    for (int i = 0; i < nv_; ++i) {
+      std::vector<int> neigh;
+      Eigen::VectorXi coord = Site2Coord(i, l_);
+      for (auto t : trans) {
+        Eigen::VectorXi newcoord(dim_);
+        for (int d = 0; d < dim_; ++d) {
+          newcoord(d) = ((coord(d) + t(d)) % l_ + l_) % l_;
+        }
+        neigh.push_back(Coord2Site(newcoord, l_));
+      }
+      neighbours_.push_back(neigh);
+    }
+    assert(neighbours_[0].size() == kernel_size_);
+
+    // Construct flipped_neighbours_
+    // flipped_neighbours_[i][k] should be acted on by kernel(k)
+    // Let neighbours_[i][k] = l
+    // i.e. look for the direction k' where neighbours_[l][k'] = i
+    // then neighbours_[i][k'] will be acted on by kernel(k)
+    // so flipped_neighbours_[i][k] = neighbours_[i][k']
+    for (int i = 0; i < nv_; ++i) {
+      std::vector<int> flippedneigh;
+      for (int k = 0; k < kernel_size_; ++k) {
+        int l = neighbours_[i][k];
+        for (int kp = 0; kp < kernel_size_; ++kp) {
+          if (neighbours_[l][kp] == i) {
+            flippedneigh.push_back(neighbours_[i][kp]);
+          }
+        }
+      }
+      flipped_neighbours_.push_back(flippedneigh);
+    }
+    assert(flipped_neighbours_[0].size() == kernel_size_);
+
+    kernels_.resize(in_channels_ * kernel_size_, out_channels_);
+    bias_.resize(out_channels_);
+
+    lowered_image_.resize(in_channels_ * kernel_size_, nv_);
+    lowered_image2_.resize(nv_, in_channels_ * kernel_size_);
+    lowered_der_.resize(kernel_size_ * out_channels_, nv_);
+    flipped_kernels_.resize(kernel_size_ * out_channels_, in_channels_);
 
     npar_ = in_channels_ * kernel_size_ * out_channels_;
 
@@ -124,59 +178,6 @@ class ConvolutionalSquare : public AbstractLayer<T> {
       bias_.setZero();
     }
 
-    // Construct neighbourhood of all nodes with distance of at most dist_ from
-    // each node i, kernel(k) will act on the node neighbours_[i][k] of the
-    // input image to give a value at node i in the output image.
-    for (int i = 0; i < nout_; ++i) {
-      std::vector<int> neigh;
-      int sy = (i / output_image_size_) * stride_;
-      int sx = (i % output_image_size_) * stride_;
-      for (int j = 0; j < filter_size_; ++j) {
-        for (int k = 0; k < filter_size_; ++k) {
-          int kx = (sx + k) % input_image_size_;
-          int ky = (sy + j) % input_image_size_;
-          int index = ky * input_image_size_ + kx;
-          neigh.push_back(index);
-        }
-      }
-      neighbours_.push_back(neigh);
-    }
-
-    // Construct flipped_nodes_[i][k] = nn such that
-    // site i contributes to nn via kernel(k)
-    for (int i = 0; i < nv_; ++i) {
-      std::vector<int> flippednodes;
-      int sy = i / input_image_size_;
-      int sx = i % input_image_size_;
-      for (int j = 0; j < filter_size_; ++j) {
-        for (int k = 0; k < filter_size_; ++k) {
-          int kx = ((sx - k) % input_image_size_ + input_image_size_) %
-                   input_image_size_;
-          int ky = ((sy - j) % input_image_size_ + input_image_size_) %
-                   input_image_size_;
-          int nx = kx / stride_;
-          int ny = ky / stride_;
-          // std::cout << "kx = " << kx << " nx = " << nx << std::endl;
-          // std::cout << "ky = " << ky << " ny = " << ny << std::endl;
-          int index = ny * output_image_size_ + nx;
-          if (stride_ * nx == kx && stride_ * ny == ky) {
-            flippednodes.push_back(index);
-          } else {
-            flippednodes.push_back(-1);
-          }
-        }
-      }
-      flipped_nodes_.push_back(flippednodes);
-    }
-
-    kernels_.resize(in_channels_ * kernel_size_, out_channels_);
-    bias_.resize(out_channels_);
-
-    lowered_image_.resize(in_channels_ * kernel_size_, nout_);
-    lowered_image2_.resize(nout_, in_channels_ * kernel_size_);
-    lowered_der_.resize(kernel_size_ * out_channels_, nv_);
-    flipped_kernels_.resize(kernel_size_ * out_channels_, in_channels_);
-
     std::string buffer = "";
 
     InfoMessage(buffer) << "Square Convolutional Layer: " << in_size_ << " --> "
@@ -184,9 +185,9 @@ class ConvolutionalSquare : public AbstractLayer<T> {
     InfoMessage(buffer) << "# # InputChannels = " << in_channels_ << std::endl;
     InfoMessage(buffer) << "# # OutputChannels = " << out_channels_
                         << std::endl;
-    InfoMessage(buffer) << "# # Square Filter Length = " << filter_size_
+    InfoMessage(buffer) << "# # Filter Distance = " << kernel_length_
                         << std::endl;
-    InfoMessage(buffer) << "# # Stride = " << stride_ << std::endl;
+    InfoMessage(buffer) << "# # Filter Size = " << kernel_size_ << std::endl;
     InfoMessage(buffer) << "# # UseBias = " << usebias_ << std::endl;
   }
 
@@ -249,6 +250,7 @@ class ConvolutionalSquare : public AbstractLayer<T> {
                   VectorType &output) override {
     lt.resize(1);
     lt[0].resize(out_size_);
+
     Forward(v, lt, output);
   }
 
@@ -311,7 +313,7 @@ class ConvolutionalSquare : public AbstractLayer<T> {
   // performs the convolution of the kernel onto the image and writes into z
   inline void Convolve(const VectorType &image, VectorType &z) {
     // im2col method
-    for (int i = 0; i < nout_; ++i) {
+    for (int i = 0; i < nv_; ++i) {
       int j = 0;
       for (auto n : neighbours_[i]) {
         for (int in = 0; in < in_channels_; ++in) {
@@ -320,7 +322,7 @@ class ConvolutionalSquare : public AbstractLayer<T> {
         j++;
       }
     }
-    Eigen::Map<MatrixType> output_image(z.data(), nout_, out_channels_);
+    Eigen::Map<MatrixType> output_image(z.data(), nv_, out_channels_);
     output_image.noalias() = lowered_image_.transpose() * kernels_;
   }
 
@@ -331,7 +333,7 @@ class ConvolutionalSquare : public AbstractLayer<T> {
     if (usebias_) {
       int k = 0;
       for (int out = 0; out < out_channels_; ++out) {
-        for (int i = 0; i < nout_; ++i) {
+        for (int i = 0; i < nv_; ++i) {
           theta[0](k) += bias_(out);
           ++k;
         }
@@ -349,18 +351,15 @@ class ConvolutionalSquare : public AbstractLayer<T> {
                           const std::vector<int> &input_changes,
                           const VectorType &new_input, LookupType &theta) {
     const int num_of_changes = input_changes.size();
-
     for (int s = 0; s < num_of_changes; ++s) {
       const int sf = input_changes[s];
       int kout = 0;
       for (int out = 0; out < out_channels_; ++out) {
         for (int k = 0; k < kernel_size_; ++k) {
-          if (flipped_nodes_[sf][k] >= 0) {
-            theta[0](flipped_nodes_[sf][k] + kout) +=
-                kernels_(k, out) * (new_input(s) - v(sf));
-          }
+          theta[0](flipped_neighbours_[sf][k] + kout) +=
+              kernels_(k, out) * (new_input(s) - v(sf));
         }
-        kout += nout_;
+        kout += nv_;
       }
     }
   }
@@ -375,12 +374,10 @@ class ConvolutionalSquare : public AbstractLayer<T> {
       int kout = 0;
       for (int out = 0; out < out_channels_; ++out) {
         for (int k = 0; k < kernel_size_; ++k) {
-          if (flipped_nodes_[sf][k] >= 0) {
-            theta[0](flipped_nodes_[sf][k] + kout) +=
-                kernels_(k, out) * (newconf[s] - prev_input(sf));
-          }
+          theta[0](flipped_neighbours_[sf][k] + kout) +=
+              kernels_(k, out) * (newconf[s] - prev_input(sf));
         }
-        kout += nout_;
+        kout += nv_;
       }
     }
   }
@@ -401,7 +398,7 @@ class ConvolutionalSquare : public AbstractLayer<T> {
       int k = 0;
       for (int out = 0; out < out_channels_; ++out) {
         der(kd) = 0;
-        for (int i = 0; i < nout_; ++i) {
+        for (int i = 0; i < nv_; ++i) {
           der(kd) += dLz(k);
           ++k;
         }
@@ -411,12 +408,12 @@ class ConvolutionalSquare : public AbstractLayer<T> {
 
     // Derivative for weights, d(L) / d(W) = [d(L) / d(z)] * in'
     // Reshape dLdZ
-    Eigen::Map<MatrixType> dLz_reshaped(dLz.data(), nout_, out_channels_);
+    Eigen::Map<MatrixType> dLz_reshaped(dLz.data(), nv_, out_channels_);
 
     // Reshape image
     for (int in = 0; in < in_channels_; ++in) {
       for (int k = 0; k < kernel_size_; ++k) {
-        for (int i = 0; i < nout_; ++i) {
+        for (int i = 0; i < nv_; ++i) {
           lowered_image2_(i, k + in * kernel_size_) =
               prev_layer_output(in * nv_ + neighbours_[i][k]);
         }
@@ -436,16 +433,17 @@ class ConvolutionalSquare : public AbstractLayer<T> {
       }
       kout += kernel_size_;
     }
+
     for (int i = 0; i < nv_; i++) {
       int j = 0;
-      for (auto n : flipped_nodes_[i]) {
+      for (auto n : flipped_neighbours_[i]) {
         for (int out = 0; out < out_channels_; ++out) {
-          lowered_der_(out * kernel_size_ + j, i) =
-              n >= 0 ? dLz(out * nout_ + n) : 0;
+          lowered_der_(out * kernel_size_ + j, i) = dLz(out * nv_ + n);
         }
         j++;
       }
     }
+
     din.resize(in_size_);
     Eigen::Map<MatrixType> der_in(din.data(), nv_, in_channels_);
     der_in.noalias() = lowered_der_.transpose() * flipped_kernels_;
@@ -476,6 +474,25 @@ class ConvolutionalSquare : public AbstractLayer<T> {
     } else {
       bias_.setZero();
     }
+  }
+
+  int Coord2Site(Eigen::VectorXi const &coord, int L) {
+    auto site = 0;
+    auto scale = 1;
+    for (int i = 0; i < dim_; ++i) {
+      site += scale * coord(i);
+      scale *= L;
+    }
+    return site;
+  }
+
+  Eigen::VectorXi Site2Coord(int site, int L) {
+    Eigen::VectorXi coord(dim_);
+    for (int i = 0; i < dim_; ++i) {
+      coord(i) = site % L;
+      site /= L;
+    }
+    return coord;
   }
 };
 }  // namespace netket
