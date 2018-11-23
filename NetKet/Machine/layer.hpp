@@ -14,8 +14,8 @@
 
 #include "Layer/abstract_layer.hpp"
 #include "Layer/activations.hpp"
+#include "Layer/conv_hypercube_layer.hpp"
 #include "Layer/conv_layer.hpp"
-#include "Layer/conv_square_layer.hpp"
 #include "Layer/fullconn_layer.hpp"
 #include "Layer/sum_output.hpp"
 
@@ -59,15 +59,15 @@ class Layer : public AbstractLayer<T> {
       } else if (pars["Activation"] == "Relu") {
         m_ = Ptype(new Convolutional<Relu, T>(graph, pars));
       }
-    } else if (pars["Name"] == "SquareConvolutional") {
+    } else if (pars["Name"] == "ConvolutionalHypercube") {
       if (pars["Activation"] == "Lncosh") {
-        m_ = Ptype(new ConvolutionalSquare<Lncosh, T>(pars));
+        m_ = Ptype(new ConvolutionalHypercube<Lncosh, T>(pars));
       } else if (pars["Activation"] == "Identity") {
-        m_ = Ptype(new ConvolutionalSquare<Identity, T>(pars));
+        m_ = Ptype(new ConvolutionalHypercube<Identity, T>(pars));
       } else if (pars["Activation"] == "Tanh") {
-        m_ = Ptype(new ConvolutionalSquare<Tanh, T>(pars));
+        m_ = Ptype(new ConvolutionalHypercube<Tanh, T>(pars));
       } else if (pars["Activation"] == "Relu") {
-        m_ = Ptype(new ConvolutionalSquare<Relu, T>(pars));
+        m_ = Ptype(new ConvolutionalHypercube<Relu, T>(pars));
       }
     } else if (pars["Name"] == "Sum") {
       m_ = Ptype(new SumOutput<T>(pars));
