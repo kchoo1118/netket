@@ -34,7 +34,7 @@ namespace netket {
  be column major.
  */
 template <typename Activation, typename T>
-class ConvolutionalSquare : public AbstractLayer<T> {
+class ConvolutionalHypercube : public AbstractLayer<T> {
   using VectorType = typename AbstractLayer<T>::VectorType;
 
   using MatrixType = typename AbstractLayer<T>::MatrixType;
@@ -74,9 +74,10 @@ class ConvolutionalSquare : public AbstractLayer<T> {
   using LookupType = typename AbstractLayer<T>::LookupType;
 
   /// Constructor
-  ConvolutionalSquare(const int length, const int dim, const int input_channels,
-                      const int output_channels, const int kernel_length = 1,
-                      const bool use_bias = true)
+  ConvolutionalHypercube(const int length, const int dim,
+                         const int input_channels, const int output_channels,
+                         const int kernel_length = 1,
+                         const bool use_bias = true)
       : usebias_(use_bias),
         l_(length),
         dim_(dim),
@@ -86,7 +87,7 @@ class ConvolutionalSquare : public AbstractLayer<T> {
     Init();
   }
 
-  explicit ConvolutionalSquare(const json &pars) : activation_() {
+  explicit ConvolutionalHypercube(const json &pars) : activation_() {
     l_ = FieldVal(pars, "Length");
     dim_ = FieldVal(pars, "Dim");
     kernel_length_ = FieldVal(pars, "KernelLength");
