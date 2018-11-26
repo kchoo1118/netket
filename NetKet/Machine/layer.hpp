@@ -18,6 +18,7 @@
 #include "Layer/conv_layer.hpp"
 #include "Layer/fullconn_layer.hpp"
 #include "Layer/sum_output.hpp"
+#include "Layer/symm_conv_square_layer.hpp"
 
 #ifndef NETKET_LAYER_HPP
 #define NETKET_LAYER_HPP
@@ -69,6 +70,16 @@ class Layer : public AbstractLayer<T> {
       } else if (pars["Activation"] == "Relu") {
         m_ = Ptype(new ConvolutionalHypercube<Relu, T>(pars));
       }
+    } else if (pars["Name"] == "SymmSquareConv") {
+      if (pars["Activation"] == "Lncosh") {
+        m_ = Ptype(new SymmSquareConvolutional<Lncosh, T>(pars));
+      } else if (pars["Activation"] == "Identity") {
+        m_ = Ptype(new SymmSquareConvolutional<Identity, T>(pars));
+      } else if (pars["Activation"] == "Tanh") {
+        m_ = Ptype(new SymmSquareConvolutional<Tanh, T>(pars));
+      } else if (pars["Activation"] == "Relu") {
+        m_ = Ptype(new SymmSquareConvolutional<Relu, T>(pars));
+      }
     } else if (pars["Name"] == "Sum") {
       m_ = Ptype(new SumOutput<T>(pars));
     }
@@ -80,8 +91,9 @@ class Layer : public AbstractLayer<T> {
 
     const std::string name = FieldVal(pars, "Name");
 
-    std::set<std::string> layers = {"FullyConnected", "Convolutional",
-                                    "Symmetric", "Sum", "SquareConvolutional"};
+    std::set<std::string> layers = {
+        "FullyConnected",         "Convolutional", "Symmetric", "Sum",
+        "ConvolutionalHypercube", "SymmSquareConv"};
 
     if (layers.count(name) == 0) {
       std::stringstream s;
