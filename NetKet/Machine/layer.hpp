@@ -18,7 +18,7 @@
 #include "Layer/conv_layer.hpp"
 #include "Layer/fullconn_layer.hpp"
 #include "Layer/sum_output.hpp"
-#include "Layer/symm_conv_square_layer.hpp"
+#include "Layer/symm_conv_square_layer_2.hpp"
 
 #ifndef NETKET_LAYER_HPP
 #define NETKET_LAYER_HPP
