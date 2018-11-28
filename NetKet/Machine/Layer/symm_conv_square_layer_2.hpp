@@ -175,15 +175,6 @@ class SymmSquareConvolutional : public AbstractLayer<T> {
         }
       }
     }
-    std::cout << std::endl;
-    std::cout << "kauto size = " << kauto_.size() << std::endl;
-    std::cout << "symm_kernel_size_ = " << symm_kernel_size_ << std::endl;
-    for (int i = 0; i < kauto_.size(); ++i) {
-      for (auto j : kauto_[i]) {
-        std::cout << j << " ";
-      }
-      std::cout << std::endl;
-    }
 
     // Construct dermatsymm_
     dermatsymm_.resize(symm_kernel_size_, kernel_size_);
