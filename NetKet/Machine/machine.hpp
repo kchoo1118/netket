@@ -22,6 +22,7 @@
 #include "Hamiltonian/hamiltonian.hpp"
 #include "abstract_machine.hpp"
 #include "ffnn.hpp"
+#include "ffnn_c4.hpp"
 #include "jastrow.hpp"
 #include "jastrow_symm.hpp"
 #include "rbm_multival.hpp"
@@ -90,6 +91,8 @@ class Machine : public AbstractMachine<T> {
       m_ = Ptype(new FFNN<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "JastrowSymm") {
       m_ = Ptype(new JastrowSymm<T>(graph, hilbert, pars));
+    } else if (pars["Machine"]["Name"] == "FFNNC4") {
+      m_ = Ptype(new FFNNC4<T>(graph, hilbert, pars));
     }
   }
 
@@ -121,7 +124,8 @@ class Machine : public AbstractMachine<T> {
     const std::string name = FieldVal(pars["Machine"], "Name", "Machine");
 
     std::set<std::string> machines = {"RbmSpin", "RbmSpinSymm", "RbmMultival",
-                                      "FFNN",    "Jastrow",     "JastrowSymm"};
+                                      "FFNN",    "Jastrow",     "JastrowSymm",
+                                      "FFNNC4"};
 
     if (machines.count(name) == 0) {
       std::stringstream s;
