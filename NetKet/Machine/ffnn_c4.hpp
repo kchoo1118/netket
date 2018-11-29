@@ -97,9 +97,6 @@ class FFNNC4 : public AbstractMachine<T> {
       int j = Coord2Site(coord, l_);
       prot_(i, j) = 1;
     }
-    std::cout << "====" << std::endl;
-    std::cout << prot_ << std::endl;
-    std::cout << "====" << std::endl;
 
     std::string buffer = "";
     // Initialise Layers
