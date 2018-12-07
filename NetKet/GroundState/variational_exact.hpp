@@ -65,6 +65,7 @@ class VariationalExact {
   std::vector<std::complex<double>> mel_;
 
   Eigen::VectorXcd elocs_;
+  std::vector<Eigen::VectorXcd> eobs_;
   MatrixT Ok_;
   VectorT Okmean_;
   MatrixT Ok1_;
@@ -161,6 +162,11 @@ class VariationalExact {
     psi1_.resize(dim_);
     psi1_.setZero();
 
+    eobs_.resize(obs_.size());
+    for (int i = 0; i < int(obs_.size()); ++i) {
+      eobs_[i].resize(dim_);
+    }
+
     setSrParameters();
 
     MPI_Comm_size(MPI_COMM_WORLD, &totalnodes_);
@@ -241,18 +247,11 @@ class VariationalExact {
       }
 
       vsamp_.row(count) = v;
-      // cout << "config " << count << " = " << v.transpose() << endl;
       count++;
     } while (std::next_permutation(myints.begin(), myints.end()));
-    // InfoMessage() << "Full set of configurations obtained" << std::endl;
-    // InfoMessage() << "Hilbert space dimensions = " << dim_ << std::endl;
   }
 
   void Sample() {
-    // vsamp_.resize(dim_, psi_.Nvisible());
-    // for (int i = 0; i < dim_; ++i) {
-    //   vsamp_.row(i) = hilbert_index_.NumberToState(i);
-    // }
     GetConfig();
     InfoMessage() << "Full set of configurations obtained" << std::endl;
     InfoMessage() << "Hilbert space dimensions = " << dim_ << std::endl;
@@ -268,6 +267,7 @@ class VariationalExact {
 
     const int nsamp = vsamp_.rows();
     elocs_.resize(nsamp);
+
     Ok_.resize(nsamp, psi_.Npar());
 
     elocmean_ = 0.0;
@@ -279,14 +279,19 @@ class VariationalExact {
       std::complex<double> lv = psi_.LogVal(vsamp_.row(i));
       psi2_(i) = std::norm(std::exp(lv));
       psi1_(i) = std::exp(lv);
+      for (int j = 0; j < int(obs_.size()); ++j) {
+        eobs_[j](i) = ObSamp(obs_[j], vsamp_.row(i));
+      }
     }
     psi2_ /= norm;
     psi1_ /= std::sqrt(norm);
     elocmean_ = (elocs_.transpose() * psi2_)(0);
-    // for (int i = 0; i < nsamp; i++) {
-    //   obsmanager_.Push("Energy", elocmean_.real());
-    // }
+
     obsmanager_.Push("Energy", elocmean_.real());
+    for (int j = 0; j < int(obs_.size()); ++j) {
+      obsmanager_.Push(obs_[j].Name(),
+                       (eobs_[j].transpose() * psi2_)(0).real());
+    }
 
     for (int i = 0; i < npar_; ++i) {
       std::complex<double> mean = 0.0;
