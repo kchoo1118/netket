@@ -29,6 +29,8 @@
 #include "variational_exact.hpp"
 #include "variational_montecarlo.hpp"
 
+#include "Hilbert/hilbert_index.hpp"
+
 namespace netket {
 
 class GroundState {
@@ -161,6 +163,19 @@ class GroundState {
         j["MatrixWrapper"] = matrix_format;
         auto observables = Observable::FromJson(hamiltonian.GetHilbert(), pars);
         const auto& state = edresult.eigenvectors[0];
+
+        // const auto& hilbert = hamiltonian.GetHilbert();
+        // const HilbertIndex hilbert_index(hilbert);
+        //
+        // Eigen::VectorXd v1(16);
+        // v1 << 1, 1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1;
+        // Eigen::VectorXd v2(16);
+        // v2 << 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1;
+        //
+        // auto i1 = hilbert_index.StateToNumber(v1);
+        // auto i2 = hilbert_index.StateToNumber(v2);
+        // std::cout << "i1 = " << state(i1) << std::endl;
+        // std::cout << "i2 = " << state(i2) << std::endl;
         for (const auto& entry : observables) {
           const auto& obs = ConstructMatrixWrapper(j, entry);
           const auto value = obs->Mean(state).real();
