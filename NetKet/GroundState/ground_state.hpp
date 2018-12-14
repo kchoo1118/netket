@@ -85,6 +85,27 @@ class GroundState {
                                              pars);
       vmc.Run();
 
+    } else if (method_name == "Sum") {
+      using MachineType = PsiSum<std::complex<double>>;
+      MachineType machine(graph, hamiltonian, pars);
+
+      Sampler<MachineType> sampler(graph, hamiltonian, machine, pars);
+      Optimizer optimizer(pars);
+
+      VariationalMonteCarlo<MachineType> vmc(hamiltonian, sampler, optimizer,
+                                             pars);
+      vmc.Run();
+
+    } else if (method_name == "SumExact") {
+      using MachineType = PsiSum<std::complex<double>>;
+      MachineType machine(graph, hamiltonian, pars);
+
+      Sampler<MachineType> sampler(graph, hamiltonian, machine, pars);
+      Optimizer optimizer(pars);
+
+      VariationalExact<MachineType> vmc(hamiltonian, sampler, optimizer, pars);
+      vmc.Run();
+
     } else if (method_name == "ImaginaryTimePropagation") {
       int size;
       MPI_Comm_size(MPI_COMM_WORLD, &size);
