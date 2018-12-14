@@ -414,44 +414,46 @@ class VariationalMonteCarlo {
   }
 
   void CheckDerLog(double eps = 1.0e-4) {
-    // std::cout << "# Check C4" << std::endl;
-    //
-    // Eigen::VectorXd v1(16);
-    // v1 << 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1;
-    // Eigen::VectorXd v2(16);
-    // v2 << 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1;
-    //
-    // std::cout << "psi(v) = " << std::exp(psi_.LogVal(v1)) << std::endl;
-    // std::cout << "psi(rv) = " << std::exp(psi_.LogVal(v2)) << std::endl;
+    if (mynode_ == 0) {
+      // std::cout << "# Check C4" << std::endl;
+      //
+      // Eigen::VectorXd v1(16);
+      // v1 << 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1;
+      // Eigen::VectorXd v2(16);
+      // v2 << 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1;
+      //
+      // std::cout << "psi(v) = " << std::exp(psi_.LogVal(v1)) << std::endl;
+      // std::cout << "psi(rv) = " << std::exp(psi_.LogVal(v2)) << std::endl;
 
-    std::cout << "# Debugging Derivatives of Wave-Function Logarithm"
-              << std::endl;
-    std::flush(std::cout);
+      std::cout << "# Debugging Derivatives of Wave-Function Logarithm"
+                << std::endl;
+      std::flush(std::cout);
 
-    sampler_.Reset(true);
-    auto ders = psi_.DerLog(sampler_.Visible());
-    auto pars = psi_.GetParameters();
-    for (int i = 0; i < npar_; i++) {
-      pars(i) += eps;
-      psi_.SetParameters(pars);
-      std::complex<double> valp = psi_.LogVal(sampler_.Visible());
+      sampler_.Reset(true);
+      auto ders = psi_.DerLog(sampler_.Visible());
+      auto pars = psi_.GetParameters();
+      for (int i = 0; i < npar_; i++) {
+        pars(i) += eps;
+        psi_.SetParameters(pars);
+        std::complex<double> valp = psi_.LogVal(sampler_.Visible());
 
-      pars(i) -= 2 * eps;
-      psi_.SetParameters(pars);
-      std::complex<double> valm = psi_.LogVal(sampler_.Visible());
+        pars(i) -= 2 * eps;
+        psi_.SetParameters(pars);
+        std::complex<double> valm = psi_.LogVal(sampler_.Visible());
 
-      pars(i) += eps;
+        pars(i) += eps;
 
-      std::complex<double> numder = (-valm + valp) / (eps * 2);
+        std::complex<double> numder = (-valm + valp) / (eps * 2);
 
-      if (std::abs(numder - ders(i)) > eps * eps) {
-        std::cerr << " Possible error on parameter " << i
-                  << ". Expected: " << ders(i) << " Found: " << numder
-                  << std::endl;
+        if (std::abs(numder - ders(i)) > eps * eps) {
+          std::cerr << " Possible error on parameter " << i
+                    << ". Expected: " << ders(i) << " Found: " << numder
+                    << std::endl;
+        }
       }
+      std::cout << "# Test completed" << std::endl;
+      std::flush(std::cout);
     }
-    std::cout << "# Test completed" << std::endl;
-    std::flush(std::cout);
   }
 };
 
