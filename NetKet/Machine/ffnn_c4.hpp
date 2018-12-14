@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <Eigen/Dense>
+#include <cmath>
 #include <iostream>
 #include <limits>
 #include <sstream>
@@ -44,6 +45,7 @@ class FFNNC4 : public AbstractMachine<T> {
   int l_;
   int c4_;
   Eigen::MatrixXd prot_;
+  Eigen::VectorXd sublatrot_;
   const std::complex<double> I;
   const double pi_;
 
@@ -96,6 +98,15 @@ class FFNNC4 : public AbstractMachine<T> {
       coord(1) = (coord(1) % l_ + l_) % l_;
       int j = Coord2Site(coord, l_);
       prot_(i, j) = 1;
+    }
+
+    sublatrot_.resize(nv_);
+    sublatrot_.setZero();
+    for (int i = 0; i < nv_; ++i) {
+      Eigen::VectorXi coord = Site2Coord(i, l_);
+      if (coord(0) % 2 == 0) {
+        sublatrot_(i) = 1;
+      }
     }
 
     std::string buffer = "";
@@ -241,7 +252,11 @@ class FFNNC4 : public AbstractMachine<T> {
       LookupType lt;
       InitLookup(vmin, lt);
       assert(nlayer_ > -0.5);
-      return I * phase + (lt.V(nlayer_ - 1))(0);
+      double u =
+          ((int)std::round((sublatrot_.dot(vmin) + nv_ / 2) / 2)) % 2 == 0
+              ? 0.0
+              : 1.0;
+      return I * phase + I * u * pi_ + (lt.V(nlayer_ - 1))(0);
     } else {
       return -1.0 * std::numeric_limits<double>::infinity();
     }
