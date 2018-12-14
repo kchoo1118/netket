@@ -25,6 +25,7 @@
 #include <vector>
 #include "Machine/lanczos.hpp"
 #include "Machine/machine.hpp"
+#include "Machine/psi_sum.hpp"
 #include "Observable/observable.hpp"
 #include "Optimizer/optimizer.hpp"
 #include "Sampler/sampler.hpp"
@@ -413,6 +414,16 @@ class VariationalMonteCarlo {
   }
 
   void CheckDerLog(double eps = 1.0e-4) {
+    // std::cout << "# Check C4" << std::endl;
+    //
+    // Eigen::VectorXd v1(16);
+    // v1 << 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1;
+    // Eigen::VectorXd v2(16);
+    // v2 << 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1;
+    //
+    // std::cout << "psi(v) = " << std::exp(psi_.LogVal(v1)) << std::endl;
+    // std::cout << "psi(rv) = " << std::exp(psi_.LogVal(v2)) << std::endl;
+
     std::cout << "# Debugging Derivatives of Wave-Function Logarithm"
               << std::endl;
     std::flush(std::cout);
