@@ -120,6 +120,9 @@ class PsiSum : public AbstractMachine<T> {
     } else if (pars["Machine"]["Name"] == "JastrowSymm") {
       InfoMessage(buffer) << "JastrowSymm" << std::endl;
       return Ptype(new JastrowSymm<T>(graph, hilbert, pars));
+    } else {
+      InfoMessage(buffer) << "RbmSpin" << std::endl;
+      return Ptype(new RbmSpin<T>(hilbert, pars));
     }
   }
 
@@ -185,16 +188,17 @@ class PsiSum : public AbstractMachine<T> {
   int Nvisible() const override { return nv_; }
 
   // Initializes Lookup tables
-  void InitLookup(const Eigen::VectorXd &v, LookupType &lt) override {
+  void InitLookup(const Eigen::VectorXd & /*v*/, LookupType & /*lt*/) override {
     // lt.resize(2);
     // psi1_->InitLookup(v, lt[0]);
     // psi2_->InitLookup(v, lt[1]);
   }
 
   // Updates Lookup tables
-  void UpdateLookup(const Eigen::VectorXd &v, const std::vector<int> &tochange,
-                    const std::vector<double> &newconf,
-                    LookupType &lt) override {
+  void UpdateLookup(const Eigen::VectorXd & /*v*/,
+                    const std::vector<int> & /*tochange*/,
+                    const std::vector<double> & /*newconf*/,
+                    LookupType & /*lt*/) override {
     // psi1_->UpdateLookup(v, tochange, newconf, lt[0]);
     // psi2_->UpdateLookup(v, tochange, newconf, lt[1]);
   }
@@ -219,7 +223,7 @@ class PsiSum : public AbstractMachine<T> {
 
   // Value of the logarithm of the wave-function
   // using pre-computed look-up tables for efficiency
-  T LogVal(const Eigen::VectorXd &v, const LookupType &lt) override {
+  T LogVal(const Eigen::VectorXd &v, const LookupType & /*lt*/) override {
     return LogVal(v);
     // return std::log(alpha_[0] * std::exp(psi1_->LogVal(v, lt[0])) +
     //                 alpha_[1] * std::exp(psi2_->LogVal(v, lt[1])));
@@ -279,7 +283,7 @@ class PsiSum : public AbstractMachine<T> {
   // on a small number of spin flips
   T LogValDiff(const Eigen::VectorXd &v, const std::vector<int> &toflip,
                const std::vector<double> &newconf,
-               const LookupType &lt) override {
+               const LookupType & /*lt*/) override {
     Eigen::VectorXd vflip = v;
     hilbert_.UpdateConf(vflip, toflip, newconf);
 
