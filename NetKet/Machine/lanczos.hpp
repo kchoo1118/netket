@@ -98,7 +98,7 @@ class Lanczos : public AbstractMachine<T> {
       InfoMessage(buffer) << "JastrowSymm" << std::endl;
       psiv_ = Ptype(new JastrowSymm<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "FFNNC4") {
-      m_ = Ptype(new FFNNC4<T>(graph, hilbert, pars));
+      psiv_ = Ptype(new FFNNC4<T>(graph, hilbert, pars));
     }
   }
 
