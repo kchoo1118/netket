@@ -273,12 +273,16 @@ class VariationalExact {
     elocmean_ = 0.0;
     double norm = 0.0;
     for (int i = 0; i < dim_; i++) {
-      elocs_(i) = Eloc(vsamp_.row(i));
       Ok_.row(i) = psi_.DerLog(vsamp_.row(i));
       norm += std::norm(std::exp(psi_.LogVal(vsamp_.row(i))));
       std::complex<double> lv = psi_.LogVal(vsamp_.row(i));
       psi2_(i) = std::norm(std::exp(lv));
       psi1_(i) = std::exp(lv);
+      if (std::abs(psi2_(i)) > 1e-20) {
+        elocs_(i) = Eloc(vsamp_.row(i));
+      } else {
+        elocs_(i) = 0.0;
+      }
       for (int j = 0; j < int(obs_.size()); ++j) {
         eobs_[j](i) = ObSamp(obs_[j], vsamp_.row(i));
       }
