@@ -96,6 +96,8 @@ class Lanczos : public AbstractMachine<T> {
     } else if (pars["Machine"]["Name"] == "JastrowSymm") {
       InfoMessage(buffer) << "JastrowSymm" << std::endl;
       psiv_ = Ptype(new JastrowSymm<T>(graph, hilbert, pars));
+    } else if (pars["Machine"]["Name"] == "FFNNC4") {
+      m_ = Ptype(new FFNNC4<T>(graph, hilbert, pars));
     }
   }
 
@@ -125,7 +127,8 @@ class Lanczos : public AbstractMachine<T> {
     const std::string name = FieldVal(pars["Machine"], "Name", "Machine");
 
     std::set<std::string> machines = {"RbmSpin", "RbmSpinSymm", "RbmMultival",
-                                      "FFNN",    "Jastrow",     "JastrowSymm"};
+                                      "FFNN",    "Jastrow",     "JastrowSymm",
+                                      "FFNNC4"};
 
     if (machines.count(name) == 0) {
       std::stringstream s;
