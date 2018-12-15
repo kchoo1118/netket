@@ -22,6 +22,7 @@
 #include "Hamiltonian/hamiltonian.hpp"
 #include "abstract_machine.hpp"
 #include "ffnn.hpp"
+#include "ffnn_c4.hpp"
 #include "jastrow.hpp"
 #include "jastrow_symm.hpp"
 #include "rbm_multival.hpp"
