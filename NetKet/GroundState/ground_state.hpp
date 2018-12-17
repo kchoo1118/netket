@@ -87,6 +87,16 @@ class GroundState {
                                              pars);
       vmc.Run();
 
+    } else if (method_name == "LanczosExact") {
+      using MachineType = Lanczos<std::complex<double>>;
+      MachineType machine(graph, hamiltonian, pars);
+
+      Sampler<MachineType> sampler(graph, hamiltonian, machine, pars);
+      Optimizer optimizer(pars);
+
+      VariationalExact<MachineType> vmc(hamiltonian, sampler, optimizer, pars);
+      vmc.Run();
+
     } else if (method_name == "Sum") {
       using MachineType = PsiSum<std::complex<double>>;
       MachineType machine(graph, hamiltonian, pars);
