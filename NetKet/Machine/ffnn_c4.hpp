@@ -252,10 +252,11 @@ class FFNNC4 : public AbstractMachine<T> {
       LookupType lt;
       InitLookup(vmin, lt);
       assert(nlayer_ > -0.5);
-      double u =
-          ((int)std::round((sublatrot_.dot(vmin) + nv_ / 2) / 2)) % 2 == 0
-              ? 0.0
-              : 1.0;
+      // double u =
+      //     ((int)std::round((sublatrot_.dot(vmin) + nv_ / 2) / 2)) % 2 == 0
+      //         ? 0.0
+      //         : 1.0;
+      double u = 0.0;
       return I * phase + I * u * pi_ + (lt.V(nlayer_ - 1))(0);
     } else {
       return -1.0 * std::numeric_limits<double>::infinity();
