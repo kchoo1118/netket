@@ -23,16 +23,17 @@ std::vector<netket::json> GetMachineInputs() {
           {"Hamiltonian", {{"Name", "Heisenberg"}}}};
   input_tests.push_back(pars);
 
-  // Heisenberg 1d with fully connected FFNN
+  // Heisenberg 1d with real fully connected FFNN
   pars = {{"Graph",
-           {{"Name", "Hypercube"}, {"L", 20}, {"Dimension", 1}, {"Pbc", true}}},
+           {{"Name", "Hypercube"}, {"L", 4}, {"Dimension", 1}, {"Pbc", true}}},
           {"Machine",
            {{"Name", "FFNN"},
             {"Layers",
-             {{{"Name", "FullyConnected"},
-               {"Inputs", 20},
-               {"Outputs", 40},
-               {"Activation", "Lncosh"}}}}}},
+             {{{"Name", "RealInputFullyConnected"},
+               {"Inputs", 4},
+               {"Outputs", 8},
+               {"Activation", "Lncosh"}},
+              {{"Name", "RealSum"}, {"Inputs", 8}}}}}},
           {"Hamiltonian", {{"Name", "Heisenberg"}}}};
   input_tests.push_back(pars);
 

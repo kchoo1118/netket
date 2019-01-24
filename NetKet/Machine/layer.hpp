@@ -17,6 +17,9 @@
 #include "Layer/conv_hypercube_layer.hpp"
 #include "Layer/conv_layer.hpp"
 #include "Layer/fullconn_layer.hpp"
+#include "Layer/real_fullconn_layer.hpp"
+#include "Layer/real_input_fullconn_layer.hpp"
+#include "Layer/real_sum_output.hpp"
 #include "Layer/sum_output.hpp"
 #include "Layer/symm_conv_square_layer_2.hpp"
 
@@ -80,8 +83,30 @@ class Layer : public AbstractLayer<T> {
       } else if (pars["Activation"] == "Relu") {
         m_ = Ptype(new SymmSquareConvolutional<Relu, T>(pars));
       }
+    } else if (pars["Name"] == "RealFullyConnected") {
+      if (pars["Activation"] == "Lncosh") {
+        m_ = Ptype(new RealFullyConnected<Lncosh, T>(pars));
+      } else if (pars["Activation"] == "Identity") {
+        m_ = Ptype(new RealFullyConnected<Identity, T>(pars));
+      } else if (pars["Activation"] == "Tanh") {
+        m_ = Ptype(new RealFullyConnected<Tanh, T>(pars));
+      } else if (pars["Activation"] == "Relu") {
+        m_ = Ptype(new RealFullyConnected<Relu, T>(pars));
+      }
+    } else if (pars["Name"] == "RealInputFullyConnected") {
+      if (pars["Activation"] == "Lncosh") {
+        m_ = Ptype(new RealInputFullyConnected<Lncosh, T>(pars));
+      } else if (pars["Activation"] == "Identity") {
+        m_ = Ptype(new RealInputFullyConnected<Identity, T>(pars));
+      } else if (pars["Activation"] == "Tanh") {
+        m_ = Ptype(new RealInputFullyConnected<Tanh, T>(pars));
+      } else if (pars["Activation"] == "Relu") {
+        m_ = Ptype(new RealInputFullyConnected<Relu, T>(pars));
+      }
     } else if (pars["Name"] == "Sum") {
       m_ = Ptype(new SumOutput<T>(pars));
+    } else if (pars["Name"] == "RealSum") {
+      m_ = Ptype(new RealSumOutput<T>(pars));
     }
   }
 
@@ -91,9 +116,15 @@ class Layer : public AbstractLayer<T> {
 
     const std::string name = FieldVal(pars, "Name");
 
-    std::set<std::string> layers = {
-        "FullyConnected",         "Convolutional", "Symmetric", "Sum",
-        "ConvolutionalHypercube", "SymmSquareConv"};
+    std::set<std::string> layers = {"FullyConnected",
+                                    "Convolutional",
+                                    "Symmetric",
+                                    "Sum",
+                                    "ConvolutionalHypercube",
+                                    "SymmSquareConv",
+                                    "RealFullyConnected",
+                                    "RealInputFullyConnected",
+                                    "RealSum"};
 
     if (layers.count(name) == 0) {
       std::stringstream s;

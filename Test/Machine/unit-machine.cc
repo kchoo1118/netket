@@ -44,7 +44,8 @@ TEST_CASE("machines set/get correctly parameters", "[machine]") {
 
       machine.SetParameters(params);
 
-      REQUIRE(Approx((machine.GetParameters() - params).norm()) == 0);
+      REQUIRE(Approx((machine.GetParameters().real() - params.real()).norm()) ==
+              0);
     }
   }
 }
@@ -81,8 +82,12 @@ TEST_CASE("machines write/read to/from json correctly", "[machine]") {
       netket::Machine<MType>::VectorType params_out(machine.Npar());
 
       params_out = machine.GetParameters();
-
-      REQUIRE(Approx((params_out - params).norm()) == 0);
+      if (!(Approx((params_out - params).norm()) == 0)) {
+        std::cout << params_out.transpose() << std::endl;
+        std::cout << "=======" << std::endl;
+        std::cout << params.transpose() << std::endl;
+      }
+      REQUIRE(Approx((params_out.real() - params.real()).norm()) == 0);
     }
   }
 }
