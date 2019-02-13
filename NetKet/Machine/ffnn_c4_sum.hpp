@@ -82,7 +82,8 @@ class FFNNC4Sum : public AbstractMachine<T> {
     } else {
       throw InvalidInputError("Field (Layers) not defined for Machine (FFNN)");
     }
-    c4_ = std::exp(I * double(FieldVal(pars["Machine"], "C4")) * pi_ / 4.0);
+    c4_ =
+        std::exp(I * double(FieldVal(pars["Machine"], "C4")) * 2.0 * pi_ / 4.0);
     rot_type_ = FieldVal(pars["Machine"], "RotType");
     l_ = FieldVal(pars["Machine"], "Length");
     if (!(l_ * l_ == nv_)) {
