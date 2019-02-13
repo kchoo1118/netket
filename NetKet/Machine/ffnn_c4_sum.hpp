@@ -51,6 +51,8 @@ class FFNNC4Sum : public AbstractMachine<T> {
   std::string rot_type_;
   Eigen::MatrixXd prot_;
   Eigen::VectorXd phaserot_;
+  const std::complex<double> I;
+  const double pi_;
 
   const Hilbert &hilbert_;
 
@@ -63,7 +65,11 @@ class FFNNC4Sum : public AbstractMachine<T> {
   // constructor
   explicit FFNNC4Sum(const Graph &graph, const Hilbert &hilbert,
                      const json &pars)
-      : nv_(hilbert.Size()), hilbert_(hilbert), graph_(graph) {
+      : nv_(hilbert.Size()),
+        hilbert_(hilbert),
+        graph_(graph),
+        I(0.0, 1.0),
+        pi_(std::acos(-1)) {
     Init(pars);
   }
 
@@ -75,7 +81,7 @@ class FFNNC4Sum : public AbstractMachine<T> {
     } else {
       throw InvalidInputError("Field (Layers) not defined for Machine (FFNN)");
     }
-    c4_ = FieldVal(pars["Machine"], "C4");
+    c4_ = std::exp(I * FieldVal(pars["Machine"], "C4") * pi_ / 4.0);
     rot_type_ = FieldVal(pars["Machine"], "RotType");
     l_ = FieldVal(pars["Machine"], "Length");
     if (!(l_ * l_ == nv_)) {
@@ -170,6 +176,7 @@ class FFNNC4Sum : public AbstractMachine<T> {
     InfoMessage(buffer) << layersizes_[depth_ - 1];
     InfoMessage(buffer) << std::endl;
     InfoMessage(buffer) << "# C4 sector = " << c4_ << std::endl;
+    InfoMessage(buffer) << "# Rot Type = " << rot_type_ << std::endl;
     InfoMessage(buffer) << "# Total Number of Parameters = " << npar_
                         << std::endl;
   }
@@ -263,9 +270,11 @@ class FFNNC4Sum : public AbstractMachine<T> {
   T LogVal(const Eigen::VectorXd &v) override {
     T wf_val = 0.0;
     Eigen::VectorXd vprime = v;
+    double c4phase = 1.0;
     for (int i = 0; i < 4; ++i) {
-      wf_val += SPhase(vprime) * std::exp(BareLogVal(vprime));
+      wf_val += SPhase(vprime) * c4phase * std::exp(BareLogVal(vprime));
       vprime = prot_ * vprime;
+      c4phase = c4_ * c4phase;
     }
     return std::log(wf_val);
   }
