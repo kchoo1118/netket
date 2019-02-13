@@ -44,8 +44,9 @@ class FFNNC4 : public AbstractMachine<T> {
 
   int l_;
   int c4_;
+  std::string rot_type_;
   Eigen::MatrixXd prot_;
-  Eigen::VectorXd sublatrot_;
+  Eigen::VectorXd phaserot_;
   const std::complex<double> I;
   const double pi_;
 
@@ -80,6 +81,7 @@ class FFNNC4 : public AbstractMachine<T> {
       throw InvalidInputError("Field (Layers) not defined for Machine (FFNN)");
     }
     c4_ = FieldVal(pars["Machine"], "C4");
+    rot_type_ = FieldVal(pars["Machine"], "RotType");
     l_ = FieldVal(pars["Machine"], "Length");
     if (!(l_ * l_ == nv_)) {
       throw InvalidInputError("input Length not compatible with nv_");
@@ -100,13 +102,24 @@ class FFNNC4 : public AbstractMachine<T> {
       prot_(i, j) = 1;
     }
 
-    sublatrot_.resize(nv_);
-    sublatrot_.setZero();
-    for (int i = 0; i < nv_; ++i) {
-      Eigen::VectorXi coord = Site2Coord(i, l_);
-      if (coord(0) % 2 == 0) {
-        sublatrot_(i) = 1;
+    phaserot_.resize(nv_);
+    phaserot_.setZero();
+    if (rot_type_ == "Marshall") {
+      for (int i = 0; i < nv_; ++i) {
+        Eigen::VectorXi coord = Site2Coord(i, l_);
+        if ((coord(0) + coord(1)) % 2 == 0) {
+          phaserot_(i) = 1;
+        }
       }
+    } else if (rot_type_ == "Plq") {
+      for (int i = 0; i < nv_; ++i) {
+        Eigen::VectorXi coord = Site2Coord(i, l_);
+        if (coord(0) % 2 == 0) {
+          phaserot_(i) = 1;
+        }
+      }
+    } else {
+      phaserot_.setZero();
     }
 
     std::string buffer = "";
@@ -252,11 +265,7 @@ class FFNNC4 : public AbstractMachine<T> {
       LookupType lt;
       InitLookup(vmin, lt);
       assert(nlayer_ > -0.5);
-      double u =
-          ((int)std::round((sublatrot_.dot(vmin) + nv_ / 2) / 2)) % 2 == 0
-              ? 0.0
-              : 1.0;
-      // double u = 0.0;
+      double u = ((int)std::round((phaserot_.dot(v) / 2))) % 2 == 0 ? 0.0 : 1.0;
       return I * phase + I * u * pi_ + (lt.V(nlayer_ - 1))(0);
     } else {
       return -1.0 * std::numeric_limits<double>::infinity();

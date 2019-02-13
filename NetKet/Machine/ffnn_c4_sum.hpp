@@ -113,6 +113,8 @@ class FFNNC4Sum : public AbstractMachine<T> {
           phaserot_(i) = 1;
         }
       }
+    } else {
+      phaserot_.setZero();
     }
 
     std::string buffer = "";
