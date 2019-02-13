@@ -23,11 +23,13 @@
 #include "abstract_machine.hpp"
 #include "ffnn.hpp"
 #include "ffnn_c4.hpp"
+#include "ffnn_c4_sum.hpp"
 #include "jastrow.hpp"
 #include "jastrow_symm.hpp"
 #include "rbm_multival.hpp"
 #include "rbm_spin.hpp"
 #include "rbm_spin_symm.hpp"
+#include "rbm_spin_symm_bias.hpp"
 
 namespace netket {
 
@@ -87,12 +89,16 @@ class Machine : public AbstractMachine<T> {
     CheckInput(pars);
     if (pars["Machine"]["Name"] == "RbmSpinSymm") {
       m_ = Ptype(new RbmSpinSymm<T>(graph, hilbert, pars));
+    } else if (pars["Machine"]["Name"] == "RbmSpinSymmBias") {
+      m_ = Ptype(new RbmSpinSymmBias<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "FFNN") {
       m_ = Ptype(new FFNN<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "JastrowSymm") {
       m_ = Ptype(new JastrowSymm<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "FFNNC4") {
       m_ = Ptype(new FFNNC4<T>(graph, hilbert, pars));
+    } else if (pars["Machine"]["Name"] == "FFNNC4Sum") {
+      m_ = Ptype(new FFNNC4Sum<T>(graph, hilbert, pars));
     }
   }
 
@@ -123,9 +129,9 @@ class Machine : public AbstractMachine<T> {
     CheckFieldExists(pars, "Machine");
     const std::string name = FieldVal(pars["Machine"], "Name", "Machine");
 
-    std::set<std::string> machines = {"RbmSpin", "RbmSpinSymm", "RbmMultival",
-                                      "FFNN",    "Jastrow",     "JastrowSymm",
-                                      "FFNNC4"};
+    std::set<std::string> machines = {
+        "RbmSpin",     "RbmSpinSymm", "RbmMultival",     "FFNN",     "Jastrow",
+        "JastrowSymm", "FFNNC4",      "RbmSpinSymmBias", "FFNNC4Sum"};
 
     if (machines.count(name) == 0) {
       std::stringstream s;
