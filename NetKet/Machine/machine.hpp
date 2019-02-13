@@ -29,7 +29,6 @@
 #include "rbm_multival.hpp"
 #include "rbm_spin.hpp"
 #include "rbm_spin_symm.hpp"
-#include "rbm_spin_symm_bias.hpp"
 
 namespace netket {
 
@@ -89,8 +88,6 @@ class Machine : public AbstractMachine<T> {
     CheckInput(pars);
     if (pars["Machine"]["Name"] == "RbmSpinSymm") {
       m_ = Ptype(new RbmSpinSymm<T>(graph, hilbert, pars));
-    } else if (pars["Machine"]["Name"] == "RbmSpinSymmBias") {
-      m_ = Ptype(new RbmSpinSymmBias<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "FFNN") {
       m_ = Ptype(new FFNN<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "JastrowSymm") {
@@ -129,9 +126,9 @@ class Machine : public AbstractMachine<T> {
     CheckFieldExists(pars, "Machine");
     const std::string name = FieldVal(pars["Machine"], "Name", "Machine");
 
-    std::set<std::string> machines = {
-        "RbmSpin",     "RbmSpinSymm", "RbmMultival",     "FFNN",     "Jastrow",
-        "JastrowSymm", "FFNNC4",      "RbmSpinSymmBias", "FFNNC4Sum"};
+    std::set<std::string> machines = {"RbmSpin", "RbmSpinSymm", "RbmMultival",
+                                      "FFNN",    "Jastrow",     "JastrowSymm",
+                                      "FFNNC4",  "FFNNC4Sum"};
 
     if (machines.count(name) == 0) {
       std::stringstream s;
