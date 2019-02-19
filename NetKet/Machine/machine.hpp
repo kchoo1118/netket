@@ -24,6 +24,7 @@
 #include "ffnn.hpp"
 #include "ffnn_c4.hpp"
 #include "ffnn_c4_sum.hpp"
+#include "ffnn_vb.hpp"
 #include "jastrow.hpp"
 #include "jastrow_symm.hpp"
 #include "rbm_multival.hpp"
@@ -90,6 +91,8 @@ class Machine : public AbstractMachine<T> {
       m_ = Ptype(new RbmSpinSymm<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "FFNN") {
       m_ = Ptype(new FFNN<T>(graph, hilbert, pars));
+    } else if (pars["Machine"]["Name"] == "FFNNVB") {
+      m_ = Ptype(new FFNNVB<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "JastrowSymm") {
       m_ = Ptype(new JastrowSymm<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "FFNNC4") {
@@ -128,7 +131,7 @@ class Machine : public AbstractMachine<T> {
 
     std::set<std::string> machines = {"RbmSpin", "RbmSpinSymm", "RbmMultival",
                                       "FFNN",    "Jastrow",     "JastrowSymm",
-                                      "FFNNC4",  "FFNNC4Sum"};
+                                      "FFNNC4",  "FFNNC4Sum",   "FFNNVB"};
 
     if (machines.count(name) == 0) {
       std::stringstream s;
