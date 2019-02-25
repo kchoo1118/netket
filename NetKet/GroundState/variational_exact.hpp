@@ -107,6 +107,8 @@ class VariationalExact {
   double elocvar_;
   int npar_;
 
+  Eigen::MatrixXd fixsamp_;
+
  public:
   // JSON constructor
   VariationalExact(Hamiltonian &ham, Sampler<WfType> &sampler, Optimizer &opt,
@@ -249,6 +251,11 @@ class VariationalExact {
       vsamp_.row(count) = v;
       count++;
     } while (std::next_permutation(myints.begin(), myints.end()));
+
+    fixsamp_.resize(hilbert_index_.NStates(), psi_.Nvisible());
+    for (int i = 0; i < hilbert_index_.NStates(); ++i) {
+      fixsamp_.row(i) = hilbert_index_.NumberToState(i);
+    }
   }
 
   void Sample() {
@@ -272,6 +279,7 @@ class VariationalExact {
 
     elocmean_ = 0.0;
     double norm = 0.0;
+    std::ofstream myfile;
     for (int i = 0; i < dim_; i++) {
       Ok_.row(i) = psi_.DerLog(vsamp_.row(i));
       norm += std::norm(std::exp(psi_.LogVal(vsamp_.row(i))));
@@ -287,6 +295,16 @@ class VariationalExact {
         eobs_[j](i) = ObSamp(obs_[j], vsamp_.row(i));
       }
     }
+    myfile.open("example.wf");
+    for (int i = 0; i < hilbert_index_.NStates(); i++) {
+      if (std::abs(fixsamp_.row(i).sum()) < 0.00001) {
+        myfile << std::exp(psi_.LogVal(fixsamp_.row(i))).real() << " "
+               << std::exp(psi_.LogVal(fixsamp_.row(i))).imag() << std::endl;
+      } else {
+        myfile << "0.0 0.0" << std::endl;
+      }
+    }
+    myfile.close();
     psi2_ /= norm;
     psi1_ /= std::sqrt(norm);
     elocmean_ = (elocs_.transpose() * psi2_)(0);
