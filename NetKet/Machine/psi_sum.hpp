@@ -23,6 +23,7 @@
 #include "Hamiltonian/hamiltonian.hpp"
 #include "abstract_machine.hpp"
 #include "ffnn.hpp"
+#include "ffnn_c4_sum.hpp"
 #include "jastrow.hpp"
 #include "jastrow_symm.hpp"
 #include "rbm_multival.hpp"
@@ -117,6 +118,8 @@ class PsiSum : public AbstractMachine<T> {
     } else if (pars["Machine"]["Name"] == "FFNN") {
       InfoMessage(buffer) << "FFNN" << std::endl;
       return Ptype(new FFNN<T>(graph, hilbert, pars));
+    } else if (pars["Machine"]["Name"] == "FFNNC4Sum") {
+      m_ = Ptype(new FFNNC4Sum<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "JastrowSymm") {
       InfoMessage(buffer) << "JastrowSymm" << std::endl;
       return Ptype(new JastrowSymm<T>(graph, hilbert, pars));
@@ -172,8 +175,9 @@ class PsiSum : public AbstractMachine<T> {
     CheckFieldExists(pars, "Machine");
     const std::string name = FieldVal(pars["Machine"], "Name", "Machine");
 
-    std::set<std::string> machines = {"RbmSpin", "RbmSpinSymm", "RbmMultival",
-                                      "FFNN",    "Jastrow",     "JastrowSymm"};
+    std::set<std::string> machines = {"RbmSpin",  "RbmSpinSymm", "RbmMultival",
+                                      "FFNN",     "Jastrow",     "JastrowSymm",
+                                      "FFNNC4Sum"};
 
     if (machines.count(name) == 0) {
       std::stringstream s;
