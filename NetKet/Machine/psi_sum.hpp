@@ -119,7 +119,7 @@ class PsiSum : public AbstractMachine<T> {
       InfoMessage(buffer) << "FFNN" << std::endl;
       return Ptype(new FFNN<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "FFNNC4Sum") {
-      m_ = Ptype(new FFNNC4Sum<T>(graph, hilbert, pars));
+      return Ptype(new FFNNC4Sum<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "JastrowSymm") {
       InfoMessage(buffer) << "JastrowSymm" << std::endl;
       return Ptype(new JastrowSymm<T>(graph, hilbert, pars));
