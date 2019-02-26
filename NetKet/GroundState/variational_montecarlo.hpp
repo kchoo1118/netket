@@ -259,7 +259,7 @@ class VariationalMonteCarlo {
 
     assert(connectors_.size() == mel_.size());
 
-    auto logvaldiffs = (psi_.LogValDiff(v, connectors_, newconfs_));
+    auto logvaldiffs = (psi_.LogValDiff(v, connectors_, newconfs_).real());
 
     assert(mel_.size() == std::size_t(logvaldiffs.size()));
 
