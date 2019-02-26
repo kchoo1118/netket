@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include "Machine/lanczos.hpp"
+#include "Machine/logpsi_sum.hpp"
 #include "Machine/machine.hpp"
 #include "Machine/psi_sum.hpp"
 #include "Observable/observable.hpp"
@@ -259,7 +260,7 @@ class VariationalMonteCarlo {
 
     assert(connectors_.size() == mel_.size());
 
-    auto logvaldiffs = (psi_.LogValDiff(v, connectors_, newconfs_).real());
+    auto logvaldiffs = (psi_.LogValDiff(v, connectors_, newconfs_));
 
     assert(mel_.size() == std::size_t(logvaldiffs.size()));
 
