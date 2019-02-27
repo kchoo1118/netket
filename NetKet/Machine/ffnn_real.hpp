@@ -20,13 +20,13 @@
 #include "Utils/all_utils.hpp"
 #include "layer.hpp"
 
-#ifndef NETKET_FFNN_HPP
-#define NETKET_FFNN_HPP
+#ifndef NETKET_FFNNREAL_HPP
+#define NETKET_FFNNREAL_HPP
 
 namespace netket {
 
 template <typename T>
-class FFNN : public AbstractMachine<T> {
+class FFNNReal : public AbstractMachine<T> {
   using VectorType = typename AbstractMachine<T>::VectorType;
   using MatrixType = typename AbstractMachine<T>::MatrixType;
   using Ptype = std::unique_ptr<AbstractLayer<T>>;
@@ -53,7 +53,8 @@ class FFNN : public AbstractMachine<T> {
   using LookupType = typename AbstractMachine<T>::LookupType;
 
   // constructor
-  explicit FFNN(const Graph &graph, const Hilbert &hilbert, const json &pars)
+  explicit FFNNReal(const Graph &graph, const Hilbert &hilbert,
+                    const json &pars)
       : nv_(hilbert.Size()), hilbert_(hilbert), graph_(graph) {
     Init(pars);
   }

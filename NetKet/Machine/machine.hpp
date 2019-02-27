@@ -25,6 +25,7 @@
 #include "ffnn_c4.hpp"
 #include "ffnn_c4_sum.hpp"
 #include "ffnn_c4_sum_real.hpp"
+#include "ffnn_real.hpp"
 #include "ffnn_vb.hpp"
 #include "jastrow.hpp"
 #include "jastrow_symm.hpp"
@@ -92,6 +93,8 @@ class Machine : public AbstractMachine<T> {
       m_ = Ptype(new RbmSpinSymm<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "FFNN") {
       m_ = Ptype(new FFNN<T>(graph, hilbert, pars));
+    } else if (pars["Machine"]["Name"] == "FFNNReal") {
+      m_ = Ptype(new FFNNReal<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "FFNNVB") {
       m_ = Ptype(new FFNNVB<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "JastrowSymm") {
