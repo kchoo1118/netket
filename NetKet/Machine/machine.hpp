@@ -24,6 +24,7 @@
 #include "ffnn.hpp"
 #include "ffnn_c4.hpp"
 #include "ffnn_c4_sum.hpp"
+#include "ffnn_c4_sum_real.hpp"
 #include "ffnn_vb.hpp"
 #include "jastrow.hpp"
 #include "jastrow_symm.hpp"
@@ -99,6 +100,8 @@ class Machine : public AbstractMachine<T> {
       m_ = Ptype(new FFNNC4<T>(graph, hilbert, pars));
     } else if (pars["Machine"]["Name"] == "FFNNC4Sum") {
       m_ = Ptype(new FFNNC4Sum<T>(graph, hilbert, pars));
+    } else if (pars["Machine"]["Name"] == "FFNNC4SumReal") {
+      m_ = Ptype(new FFNNC4SumReal<T>(graph, hilbert, pars));
     }
   }
 
@@ -129,9 +132,9 @@ class Machine : public AbstractMachine<T> {
     CheckFieldExists(pars, "Machine");
     const std::string name = FieldVal(pars["Machine"], "Name", "Machine");
 
-    std::set<std::string> machines = {"RbmSpin", "RbmSpinSymm", "RbmMultival",
-                                      "FFNN",    "Jastrow",     "JastrowSymm",
-                                      "FFNNC4",  "FFNNC4Sum",   "FFNNVB"};
+    std::set<std::string> machines = {
+        "RbmSpin",     "RbmSpinSymm", "RbmMultival", "FFNN",   "Jastrow",
+        "JastrowSymm", "FFNNC4",      "FFNNC4Sum",   "FFNNVB", "FFNNC4SumReal"};
 
     if (machines.count(name) == 0) {
       std::stringstream s;
