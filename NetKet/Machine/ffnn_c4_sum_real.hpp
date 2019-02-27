@@ -170,7 +170,7 @@ class FFNNC4SumReal : public AbstractMachine<T> {
     changed_nodes_.resize(nlayer_);
     new_output_.resize(nlayer_);
 
-    InfoMessage(buffer) << "# FFNN C4 Sum Initizialized with " << nlayer_
+    InfoMessage(buffer) << "# FFNN C4 Sum Real Initizialized with " << nlayer_
                         << " Layers: ";
     for (int i = 0; i < depth_ - 1; ++i) {
       InfoMessage(buffer) << layersizes_[i] << " -> ";
@@ -352,7 +352,7 @@ class FFNNC4SumReal : public AbstractMachine<T> {
   }
 
   void to_json(json &j) const override {
-    j["Machine"]["Name"] = "FFNNC4Sum";
+    j["Machine"]["Name"] = "FFNNC4SumReal";
     j["Machine"]["C4"] = c4_;
     j["Machine"]["Layers"] = {};
     for (int i = 0; i < nlayer_; ++i) {
