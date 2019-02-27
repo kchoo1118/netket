@@ -274,7 +274,7 @@ class FFNNC4SumReal : public AbstractMachine<T> {
     Eigen::VectorXd vprime = v;
     std::complex<double> c4phase = 1.0;
     for (int i = 0; i < 4; ++i) {
-      wf_val += SPhase(vprime) * c4phase * std::exp(BareLogVal(vprime)).real();
+      wf_val += SPhase(vprime) * c4phase * std::exp(BareLogVal(vprime).real());
       vprime = prot_ * vprime;
       c4phase = c4_ * c4phase;
     }
