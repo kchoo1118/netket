@@ -136,8 +136,9 @@ class Machine : public AbstractMachine<T> {
     const std::string name = FieldVal(pars["Machine"], "Name", "Machine");
 
     std::set<std::string> machines = {
-        "RbmSpin",     "RbmSpinSymm", "RbmMultival", "FFNN",   "Jastrow",
-        "JastrowSymm", "FFNNC4",      "FFNNC4Sum",   "FFNNVB", "FFNNC4SumReal"};
+        "RbmSpin",   "RbmSpinSymm", "RbmMultival",  "FFNN",
+        "FFNNReal",  "Jastrow",     "JastrowSymm",  "FFNNC4",
+        "FFNNC4Sum", "FFNNVB",      "FFNNC4SumReal"};
 
     if (machines.count(name) == 0) {
       std::stringstream s;
