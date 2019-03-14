@@ -77,11 +77,13 @@ struct CustomGraphInit {
   using ColorMap = AbstractGraph::ColorMap;
 
   std::vector<std::vector<int>> automorphisms;
+  std::vector<std::vector<int>> adjacencylist;
 
   auto operator()(std::vector<Edge> edges, ColorMap colors = ColorMap{})
       -> std::unique_ptr<CustomGraph> {
     return make_unique<CustomGraph>(std::move(edges), std::move(colors),
-                                    std::move(automorphisms));
+                                    std::move(automorphisms),
+                                    std::move(adjacencylist));
   }
 };
 }  // namespace
@@ -93,13 +95,17 @@ void AddCustomGraph(py::module& subm) {
   py::class_<CustomGraph, AbstractGraph>(subm, "CustomGraph", R"EOF(
       A custom graph, specified by a list of edges and optionally colors.)EOF")
       .def(py::init([](py::iterable xs,
-                       std::vector<std::vector<int>> automorphisms) {
+                       std::vector<std::vector<int>> automorphisms,
+                       std::vector<std::vector<int>> adjacencylist) {
              auto iterator = xs.attr("__iter__")();
              return WithEdges(iterator,
-                              CustomGraphInit{std::move(automorphisms)});
+                              CustomGraphInit{std::move(automorphisms),
+                                              std::move(adjacencylist)});
            }),
            py::arg("edges"),
-           py::arg("automorphisms") = std::vector<std::vector<int>>(), R"EOF(
+           py::arg("automorphisms") = std::vector<std::vector<int>>(),
+           py::arg("adjacency_list") = std::vector<std::vector<int>>(),
+           R"EOF(
            Constructs a new graph given a list of edges.
 
            Args:

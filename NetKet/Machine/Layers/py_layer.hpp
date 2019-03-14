@@ -126,6 +126,26 @@ void AddLayerModule(py::module &m) {
              )EOF");
   }
   {
+    using DerType = J1J2Convolutional<StateType>;
+    py::class_<DerType, LayerType>(subm, "J1J2Convolutional", R"EOF(
+             A convolutional feedforward layer for hypercubes. This layer
+             works only for the ``Hypercube`` graph defined in ``graph``.
+             This layer implements the standard convolution with periodic
+             boundary conditions.)EOF")
+        .def(py::init<const AbstractHilbert &, int, int, int>(),
+             py::arg("hilbert"), py::arg("input_channels"),
+             py::arg("output_channels"), py::arg("dist") = 2, R"EOF(
+             Constructs a new ``Convolutional`` layer.
+
+             Args:
+                 hilbert: hilbert space.
+                 input_channels: Number of input channels.
+                 output_channels: Number of output channels.
+                 dist: kernel distance.
+             )EOF");
+  }
+
+  {
     using DerType = SumOutput<StateType>;
     py::class_<DerType, LayerType>(subm, "SumOutput", R"EOF(
              A feedforward layer which sums the inputs to give a single output.)EOF")
@@ -212,7 +232,7 @@ void AddLayerModule(py::module &m) {
             >>> l=Relu(input_size=10)
             >>> print(l.n_par)
             0
-            
+
             ```
         )EOF");
   }

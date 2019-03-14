@@ -20,5 +20,6 @@
 #include "activations.hpp"
 #include "fullconn_layer.hpp"
 #include "hypercube_conv_layer.hpp"
+#include "j1j2_conv_layer.hpp"
 #include "sum_output.hpp"
 #endif

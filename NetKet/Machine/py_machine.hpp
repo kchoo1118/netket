@@ -26,6 +26,7 @@
 #include "Layers/py_layer.hpp"
 #include "abstract_machine.hpp"
 #include "py_ffnn.hpp"
+#include "py_j1j2_machine.hpp"
 #include "py_jastrow.hpp"
 #include "py_jastrow_symm.hpp"
 #include "py_mps_periodic.hpp"
@@ -146,6 +147,7 @@ void AddMachineModule(py::module &m) {
   AddJastrowSymm(subm);
   AddMpsPeriodic(subm);
   AddFFNN(subm);
+  AddJ1J2(subm);
   AddLayerModule(m);
 }
 

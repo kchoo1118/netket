@@ -39,14 +39,18 @@ class CustomGraph : public AbstractGraph {
   bool is_connected_;        ///< Whether the graph is connected
   bool is_bipartite_;        ///< Whether the graph is bipartite
   std::vector<std::vector<int>> automorphisms_;
+  std::vector<std::vector<int>> adjacencylist_;
 
  public:
   CustomGraph(std::vector<Edge> edges, ColorMap colors = ColorMap(),
               std::vector<std::vector<int>> automorphisms =
+                  std::vector<std::vector<int>>(),
+              std::vector<std::vector<int>> adjacencylist =
                   std::vector<std::vector<int>>())
       : edges_{std::move(edges)},
         eclist_{std::move(colors)},
-        automorphisms_{std::move(automorphisms)} {
+        automorphisms_{std::move(automorphisms)},
+        adjacencylist_{std::move(adjacencylist)} {
     n_sites_ = CheckEdges();
     if (n_sites_ == 0) {
       throw InvalidInputError{"Empty graphs are not supported."};
@@ -65,6 +69,9 @@ class CustomGraph : public AbstractGraph {
       automorphisms_.front().resize(static_cast<std::size_t>(n_sites_));
       std::iota(std::begin(automorphisms_.front()),
                 std::end(automorphisms_.front()), 0);
+    }
+    if (adjacencylist_.empty()) {
+      adjacencylist_ = detail::AdjacencyListFromEdges(Edges(), Nsites());
     }
     is_connected_ = IsConnected();
     is_bipartite_ = IsBipartite();
@@ -165,7 +172,8 @@ class CustomGraph : public AbstractGraph {
   std::vector<Edge> const &Edges() const noexcept override { return edges_; }
 
   std::vector<std::vector<int>> AdjacencyList() const override {
-    return detail::AdjacencyListFromEdges(Edges(), Nsites());
+    // return detail::AdjacencyListFromEdges(Edges(), Nsites());
+    return adjacencylist_;
   }
 
   // Returns map of the edge and its respective color

@@ -22,6 +22,7 @@
 #include "Operator/operator.hpp"
 #include "abstract_machine.hpp"
 #include "ffnn.hpp"
+#include "j1j2_machine.hpp"
 #include "jastrow.hpp"
 #include "jastrow_symm.hpp"
 #include "mps_periodic.hpp"
