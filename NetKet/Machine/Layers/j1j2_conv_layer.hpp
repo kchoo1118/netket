@@ -370,10 +370,6 @@ class J1J2Convolutional : public AbstractLayer<T> {
     } else {
       bias_.setZero();
     }
-    std::cout << kernels_ << std::endl;
-    std::cout << "=============" << std::endl;
-    std::cout << bias_ << std::endl;
-    std::cout << "=============" << std::endl;
   }
 };
 }  // namespace netket
