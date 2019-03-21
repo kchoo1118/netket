@@ -84,6 +84,14 @@ target_include_directories(Eigen3 SYSTEM INTERFACE ${SOURCE_DIR})
 add_library(IETL INTERFACE)
 target_include_directories(IETL SYSTEM INTERFACE "${CMAKE_SOURCE_DIR}/External/ietl")
 
+# PFAPACKs
+################################################################################
+add_library(PFAPACK INTERFACE)
+target_include_directories(PFAPACK SYSTEM INTERFACE "${CMAKE_SOURCE_DIR}/External/pfapack/c_interface")
+SET(FORTRAN_FLAGS "-lgfortran")
+add_definitions(${FORTRAN_FLAGS})
+
+
 # PYBIND11
 ###############################################################################
 ExternalProject_Add(
@@ -181,6 +189,9 @@ target_link_libraries(netket_lib
         optional_lite
         span_lite
         IETL
+        PFAPACK
+        ${CMAKE_SOURCE_DIR}/External/pfapack/c_interface/libpfapack.a
+        ${CMAKE_SOURCE_DIR}/External/pfapack/c_interface/libcpfapack.a
 )
 
 # Check if we should use native Lapack with Eigen
