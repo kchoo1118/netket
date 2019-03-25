@@ -50,7 +50,27 @@ void AddQubits(py::module &subm) {
                100
 
                ```
-           )EOF");
+           )EOF")
+      .def(py::init<const AbstractGraph &, double>(), py::keep_alive<1, 2>(),
+           py::arg("graph"), py::arg("total_sz"), R"EOF(
+            Constructs a new ``Qubit`` given a graph.
+
+            Args:
+                graph: Graph representation of sites.
+
+            Examples:
+                Simple qubit hilbert space.
+
+                ```python
+                >>> from netket.graph import Hypercube
+                >>> from netket.hilbert import Qubit
+                >>> g = Hypercube(length=10,n_dim=2,pbc=True)
+                >>> hi = Qubit(graph=g, total_sz=0)
+                >>> print(hi.size)
+                100
+
+                ```
+            )EOF");
 }
 
 }  // namespace netket
