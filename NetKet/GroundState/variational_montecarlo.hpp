@@ -445,6 +445,67 @@ class VariationalMonteCarlo {
           }
           MPI_Barrier(MPI_COMM_WORLD);
         }
+      } else {
+        const int nsamp = vsamp_.rows();
+
+        Eigen::VectorXd b = (Ok_.adjoint() * elocs_).real();
+        SumOnNodes(b);
+        b /= double(nsamp * totalnodes_);
+        if (!use_iterative_) {
+          // Explicit construction of the S matrix
+          Eigen::MatrixXd S = (Ok_.adjoint() * Ok_).real();
+          SumOnNodes(S);
+          S /= double(nsamp * totalnodes_);
+
+          // Adding diagonal shift
+          S += Eigen::MatrixXd::Identity(pars.size(), pars.size()) *
+               sr_diag_shift_;
+
+          Eigen::VectorXcd deltaP;
+          if (use_cholesky_ == false) {
+            Eigen::FullPivHouseholderQR<Eigen::MatrixXd> qr(S.rows(), S.cols());
+            qr.setThreshold(1.0e-6);
+            qr.compute(S);
+            deltaP = qr.solve(b);
+          } else {
+            Eigen::LLT<Eigen::MatrixXd> llt(S.rows());
+            llt.compute(S);
+            deltaP = llt.solve(b);
+          }
+          // Eigen::VectorXcd deltaP=S.jacobiSvd(ComputeThinU |
+          // ComputeThinV).solve(b);
+
+          assert(deltaP.size() == grad_.size());
+          grad_ = deltaP;
+
+          if (sr_rescale_shift_) {
+            Complex nor = (deltaP.dot(S * deltaP));
+            grad_ /= std::sqrt(nor.real());
+          }
+
+        } else {
+          Eigen::ConjugateGradient<MatrixReplacement<double>,
+                                   Eigen::Lower | Eigen::Upper,
+                                   Eigen::IdentityPreconditioner>
+              it_solver;
+          // Eigen::GMRES<MatrixReplacement, Eigen::IdentityPreconditioner>
+          // it_solver;
+          it_solver.setTolerance(1.0e-3);
+          MatrixReplacement<double> S;
+          S.attachMatrix(Eigen::MatrixXd((Ok_.adjoint() * Ok_).real()));
+          S.setShift(sr_diag_shift_);
+          S.setScale(1. / double(nsamp * totalnodes_));
+
+          it_solver.compute(S);
+          auto deltaP = it_solver.solve(b);
+
+          grad_ = deltaP;
+          if (sr_rescale_shift_) {
+            double nor = deltaP.dot(S * deltaP);
+            grad_ /= std::sqrt(nor);
+          }
+          MPI_Barrier(MPI_COMM_WORLD);
+        }
       }
     }
 
