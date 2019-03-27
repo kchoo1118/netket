@@ -97,8 +97,9 @@ struct generic_product_impl<netket::MatrixReplacement, Rhs, SparseShape,
                             const Rhs &rhs, const Scalar &alpha) {
     // This method should implement "dst += alpha * lhs * rhs" inplace,
 
-    auto vtilde = lhs.my_matrix() * rhs;
-    Eigen::VectorXcd res = lhs.my_matrix().adjoint() * vtilde;
+    // auto vtilde = lhs.my_matrix() * rhs;
+    // Eigen::VectorXcd res = lhs.my_matrix().adjoint() * vtilde;
+    Eigen::VectorXcd res = lhs.my_matrix() * rhs;
     netket::SumOnNodes(res);
 
     double nor = lhs.getScale();

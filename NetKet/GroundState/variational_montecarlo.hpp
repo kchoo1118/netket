@@ -425,7 +425,8 @@ class VariationalMonteCarlo {
         // it_solver;
         it_solver.setTolerance(1.0e-3);
         MatrixReplacement S;
-        S.attachMatrix(Ok_);
+        Eigen::MatrixXcd SS = Ok_.adjoint() * Ok_;
+        S.attachMatrix(SS);
         S.setShift(sr_diag_shift_);
         S.setScale(1. / double(nsamp * totalnodes_));
 
