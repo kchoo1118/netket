@@ -15,6 +15,8 @@ g = nk.graph.Hypercube(length=4, n_dim=1)
 # Hilbert space of spins from given graph
 hi = nk.hilbert.Spin(s=0.5, graph=g)
 
+machines["PairProduct 1d Hypercube spin"] = nk.machine.PairProduct(hilbert=hi)
+
 machines["RbmSpin 1d Hypercube spin"] = nk.machine.RbmSpin(
     hilbert=hi, alpha=1)
 
