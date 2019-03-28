@@ -56,7 +56,7 @@ class PairProduct : public AbstractMachine<T> {
   using StateType = typename AbstractMachine<T>::StateType;
   using LookupType = typename AbstractMachine<T>::LookupType;
 
-  explicit RbmSpin(const AbstractHilbert &hilbert)
+  explicit PairProduct(const AbstractHilbert &hilbert)
       : hilbert_(hilbert), nv_(hilbert.Size()) {
     Init();
   }
@@ -67,7 +67,8 @@ class PairProduct : public AbstractMachine<T> {
     X_.resize(nv_, nv_);
     rlist_.resize(nv_);
 
-    InfoMessage() << "Projected Pair Product WF Initizialized" << std::endl;
+    InfoMessage() << "Gitzwiller Projected Pair Product WF Initizialized"
+                  << std::endl;
   }
 
   int Nvisible() const override { return nv_; }
@@ -87,8 +88,8 @@ class PairProduct : public AbstractMachine<T> {
 
     int k = 0;
 
-    for (int i = 0; i < nv_; i++) {
-      for (int j = i + 1; j < nv_; j++) {
+    for (int i = 0; i < 2 * nv_; i++) {
+      for (int j = i + 1; j < 2 * nv_; j++) {
         pars(k) = F_(i, j);
         k++;
       }
@@ -100,9 +101,9 @@ class PairProduct : public AbstractMachine<T> {
   void SetParameters(VectorConstRefType pars) override {
     int k = 0;
 
-    for (int i = 0; i < nv_; i++) {
+    for (int i = 0; i < 2 * nv_; i++) {
       F_(i, i) = T(0.);
-      for (int j = i + 1; j < nv_; j++) {
+      for (int j = i + 1; j < 2 * nv_; j++) {
         F_(i, j) = pars(k);
         F_(j, i) = -F_(i, j);  // create the lower triangle
         k++;
@@ -162,28 +163,23 @@ class PairProduct : public AbstractMachine<T> {
   VectorType LogValDiff(
       VisibleConstType v, const std::vector<std::vector<int>> &tochange,
       const std::vector<std::vector<double>> &newconf) override {
+    Eigen::VectorXd vflip = v;
     const std::size_t nconn = tochange.size();
     VectorType logvaldiffs = VectorType::Zero(nconn);
 
-    thetas_ = (W_.transpose() * v + b_);
-    RbmSpin::lncosh(thetas_, lnthetas_);
-
-    T logtsum = lnthetas_.sum();
+    std::complex<double> current_val = LogVal(v);
 
     for (std::size_t k = 0; k < nconn; k++) {
       if (tochange[k].size() != 0) {
-        thetasnew_ = thetas_;
-
         for (std::size_t s = 0; s < tochange[k].size(); s++) {
           const int sf = tochange[k][s];
-
-          logvaldiffs(k) += a_(sf) * (newconf[k][s] - v(sf));
-
-          thetasnew_ += W_.row(sf) * (newconf[k][s] - v(sf));
+          vflip(sf) = newconf[k][s];
         }
-
-        RbmSpin::lncosh(thetasnew_, lnthetasnew_);
-        logvaldiffs(k) += lnthetasnew_.sum() - logtsum;
+        logvaldiffs(k) += LogVal(vflip) - current_val;
+        for (std::size_t s = 0; s < tochange[k].size(); s++) {
+          const int sf = tochange[k][s];
+          vflip(sf) = v(sf);
+        }
       }
     }
     return logvaldiffs;
@@ -195,51 +191,35 @@ class PairProduct : public AbstractMachine<T> {
   T LogValDiff(VisibleConstType v, const std::vector<int> &tochange,
                const std::vector<double> &newconf,
                const LookupType &lt) override {
-    T logvaldiff = 0.;
+    Eigen::VectorXd vflip = v;
+    hilbert_.UpdateConf(vflip, tochange, newconf);
 
-    if (tochange.size() != 0) {
-      RbmSpin::lncosh(lt.V(0), lnthetas_);
-
-      thetasnew_ = lt.V(0);
-
-      for (std::size_t s = 0; s < tochange.size(); s++) {
-        const int sf = tochange[s];
-
-        logvaldiff += a_(sf) * (newconf[s] - v(sf));
-
-        thetasnew_ += W_.row(sf) * (newconf[s] - v(sf));
-      }
-
-      RbmSpin::lncosh(thetasnew_, lnthetasnew_);
-      logvaldiff += (lnthetasnew_.sum() - lnthetas_.sum());
-    }
-    return logvaldiff;
+    return LogVal(vflip) - LogVal(v);
   }
 
   VectorType DerLog(VisibleConstType v) override {
     VectorType der(npar_);
+    der.setZero();
 
-    int k = 0;
-
-    if (usea_) {
-      for (; k < nv_; k++) {
-        der(k) = v(k);
-      }
+    for (int i = 0; i < nv_; ++i) {
+      rlist_[i] = (v(i) > 0) ? i : i + nv_;
     }
-
-    RbmSpin::tanh(W_.transpose() * v + b_, lnthetas_);
-
-    if (useb_) {
-      for (int p = 0; p < nh_; p++) {
-        der(k) = lnthetas_(p);
-        k++;
-      }
-    }
+    std::sort(rlist_.begin(), rlist_.end());
+    MatrixType X = F_(rlist_, rlist_);
+    Eigen::FullPivLU<MatrixType> lu(X);
+    MatrixType Xinv = lu.inverse();
+    MatrixType Xprime;
+    Xprime.resize(nv_, nv_);
+    Xprime.setZero();
 
     for (int i = 0; i < nv_; i++) {
-      for (int j = 0; j < nh_; j++) {
-        der(k) = lnthetas_(j) * v(i);
-        k++;
+      for (int j = i + 1; j < nv_; j++) {
+        Xprime.setZero();
+        Xprime(i, j) = 1.0;
+        Xprime(j, i) = -1.0;
+        int k = ((4 * nv_ - rlist_[i] - 1) / 2) * rlist_[i] +
+                (rlist_[j] - 1 - rlist_[i]);
+        der(k) = 0.5 * (Xinv * Xprime).trace();
       }
     }
     return der;
@@ -249,60 +229,9 @@ class PairProduct : public AbstractMachine<T> {
     return hilbert_;
   }
 
-  void to_json(json &j) const override {
-    j["Name"] = "RbmSpin";
-    j["Nvisible"] = nv_;
-    j["Nhidden"] = nh_;
-    j["UseVisibleBias"] = usea_;
-    j["UseHiddenBias"] = useb_;
-    j["a"] = a_;
-    j["b"] = b_;
-    j["W"] = W_;
-  }
+  void to_json(json &j) const override {}
 
-  void from_json(const json &pars) override {
-    std::string name = FieldVal<std::string>(pars, "Name");
-    if (name != "RbmSpin") {
-      throw InvalidInputError(
-          "Error while constructing RbmSpin from input parameters");
-    }
-
-    if (FieldExists(pars, "Nvisible")) {
-      nv_ = FieldVal<int>(pars, "Nvisible");
-    }
-    if (nv_ != hilbert_.Size()) {
-      throw InvalidInputError(
-          "Number of visible units is incompatible with given "
-          "Hilbert space");
-    }
-
-    if (FieldExists(pars, "Nhidden")) {
-      nh_ = FieldVal<int>(pars, "Nhidden");
-    } else {
-      nh_ = nv_ * double(FieldVal<double>(pars, "Alpha"));
-    }
-
-    usea_ = FieldOrDefaultVal(pars, "UseVisibleBias", true);
-    useb_ = FieldOrDefaultVal(pars, "UseHiddenBias", true);
-
-    Init();
-
-    // Loading parameters, if defined in the input
-    if (FieldExists(pars, "a")) {
-      a_ = FieldVal<VectorType>(pars, "a");
-    } else {
-      a_.setZero();
-    }
-
-    if (FieldExists(pars, "b")) {
-      b_ = FieldVal<VectorType>(pars, "b");
-    } else {
-      b_.setZero();
-    }
-    if (FieldExists(pars, "W")) {
-      W_ = FieldVal<MatrixType>(pars, "W");
-    }
-  }
+  void from_json(const json &pars) override {}
 };
 
 }  // namespace netket
