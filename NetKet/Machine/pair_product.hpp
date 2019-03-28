@@ -156,7 +156,7 @@ class PairProduct : public AbstractMachine<T> {
 
     std::complex<double> pfaffian;
     skpfa(nv_, Extract(rlist_).data(), &pfaffian, "L", "P");
-    return pfaffian;
+    return std::log(pfaffian);
   }
 
   // Value of the logarithm of the wave-function
@@ -169,7 +169,7 @@ class PairProduct : public AbstractMachine<T> {
 
     std::complex<double> pfaffian;
     skpfa(nv_, Extract(rlist_).data(), &pfaffian, "L", "P");
-    return pfaffian;
+    return std::log(pfaffian);
   }
 
   // Difference between logarithms of values, when one or more visible variables
@@ -231,7 +231,7 @@ class PairProduct : public AbstractMachine<T> {
         Xprime.setZero();
         Xprime(i, j) = 1.0;
         Xprime(j, i) = -1.0;
-        int k = ((4 * nv_ - rlist_[i] - 1) / 2) * rlist_[i] +
+        int k = ((4 * nv_ - rlist_[i] - 1) * rlist_[i]) / 2 +
                 (rlist_[j] - 1 - rlist_[i]);
         der(k) = 0.5 * (Xinv * Xprime).trace();
       }
