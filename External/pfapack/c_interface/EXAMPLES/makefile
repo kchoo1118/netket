@@ -3,7 +3,8 @@ ANSIC = gcc -ansi
 C99 = gcc -std=c99
 CFLAGS = -O3 -I ../
 #LFLAGS = ../../fortran/libpfapack.a -llapack -lblas -lgfortran
-LFLAGS = ../libpfapack.a -llapack -lblas -lgfortran
+#LFLAGS = ../libpfapack.a -llapack -lblas -lgfortran
+LFLAGS = ../libpfapack.a -llapack -lblas
 
 all:  example1_c++.out
 
