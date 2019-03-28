@@ -20,7 +20,7 @@
 #include "pfapack.h"
 
 #ifndef NETKET_PAIRPRODUCT_HPP
-#define NETKET_PAITPRODUCT_HPP
+#define NETKET_PAIRPRODUCT_HPP
 
 namespace netket {
 
@@ -67,7 +67,7 @@ class PairProduct : public AbstractMachine<T> {
     X_.resize(nv_, nv_);
     rlist_.resize(nv_);
 
-    InfoMessage() << "Gitzwiller Projected Pair Product WF Initizialized"
+    InfoMessage() << "Gutzwiller Projected Pair Product WF Initizialized"
                   << std::endl;
   }
 
@@ -133,6 +133,20 @@ class PairProduct : public AbstractMachine<T> {
     // }
   }
 
+  MatrixType Extract(const std::vector<int> &rlist) {
+    MatrixType X;
+    X.resize(nv_, nv_);
+    X.setZero();
+    assert(rlist.size() == nv_);
+    for (int i = 0; i < nv_; ++i) {
+      for (int j = i + 1; j < nv_; ++j) {
+        X(i, j) = F_(rlist_[i], rlist_[j]);
+        X(j, i) = -X(i, j);
+      }
+    }
+    return X;
+  }
+
   // Value of the logarithm of the wave-function
   T LogVal(VisibleConstType v) override {
     for (int i = 0; i < nv_; ++i) {
@@ -141,7 +155,7 @@ class PairProduct : public AbstractMachine<T> {
     std::sort(rlist_.begin(), rlist_.end());
 
     std::complex<double> pfaffian;
-    skpfa(nv_, F_(rlist_, rlist_), &pfaffian, "L", "P");
+    skpfa(nv_, Extract(rlist_).data(), &pfaffian, "L", "P");
     return pfaffian;
   }
 
@@ -154,7 +168,7 @@ class PairProduct : public AbstractMachine<T> {
     std::sort(rlist_.begin(), rlist_.end());
 
     std::complex<double> pfaffian;
-    skpfa(nv_, F_(rlist_, rlist_), &pfaffian, "L", "P");
+    skpfa(nv_, Extract(rlist_).data(), &pfaffian, "L", "P");
     return pfaffian;
   }
 
@@ -205,7 +219,7 @@ class PairProduct : public AbstractMachine<T> {
       rlist_[i] = (v(i) > 0) ? i : i + nv_;
     }
     std::sort(rlist_.begin(), rlist_.end());
-    MatrixType X = F_(rlist_, rlist_);
+    MatrixType X = Extract(rlist_);
     Eigen::FullPivLU<MatrixType> lu(X);
     MatrixType Xinv = lu.inverse();
     MatrixType Xprime;

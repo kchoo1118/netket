@@ -29,6 +29,7 @@
 #include "py_jastrow.hpp"
 #include "py_jastrow_symm.hpp"
 #include "py_mps_periodic.hpp"
+#include "py_pair_product.hpp"
 #include "py_rbm_multival.hpp"
 #include "py_rbm_spin.hpp"
 #include "py_rbm_spin_symm.hpp"
@@ -142,6 +143,7 @@ void AddMachineModule(py::module &m) {
   AddRbmSpin(subm);
   AddRbmSpinSymm(subm);
   AddRbmMultival(subm);
+  // AddPairProduct(subm);
   AddJastrow(subm);
   AddJastrowSymm(subm);
   AddMpsPeriodic(subm);
