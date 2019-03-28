@@ -88,6 +88,7 @@ target_include_directories(IETL SYSTEM INTERFACE "${CMAKE_SOURCE_DIR}/External/i
 ################################################################################
 add_library(PFAPACK INTERFACE)
 target_include_directories(PFAPACK SYSTEM INTERFACE "${CMAKE_SOURCE_DIR}/External/pfapack/c_interface")
+target_include_directories(PFAPACK SYSTEM INTERFACE "${CMAKE_SOURCE_DIR}/External/pfapack/fortran")
 SET(FORTRAN_FLAGS "-lgfortran")
 add_definitions(${FORTRAN_FLAGS})
 
@@ -190,9 +191,14 @@ target_link_libraries(netket_lib
         span_lite
         IETL
         PFAPACK
-        ${CMAKE_SOURCE_DIR}/External/pfapack/c_interface/libpfapack.a
         ${CMAKE_SOURCE_DIR}/External/pfapack/c_interface/libcpfapack.a
+        ${CMAKE_SOURCE_DIR}/External/pfapack/fortran/libpfapack.a
 )
+
+find_package(BLAS REQUIRED)
+target_link_libraries(netket_lib INTERFACE ${BLAS_LIBRARIES})
+find_package(LAPACK REQUIRED)
+target_link_libraries(netket_lib INTERFACE ${LAPACK_LIBRARIES})
 
 # Check if we should use native Lapack with Eigen
 option(USE_LAPACK "Enable Lapack Support." OFF)
@@ -207,7 +213,6 @@ if(USE_LAPACK)
     endif()
 
 endif()
-
 
 
 #target_link_libraries(netket PUBLIC netket_lib)
