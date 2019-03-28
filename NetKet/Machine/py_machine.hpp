@@ -143,7 +143,7 @@ void AddMachineModule(py::module &m) {
   AddRbmSpin(subm);
   AddRbmSpinSymm(subm);
   AddRbmMultival(subm);
-  // AddPairProduct(subm);
+  AddPairProduct(subm);
   AddJastrow(subm);
   AddJastrowSymm(subm);
   AddMpsPeriodic(subm);
