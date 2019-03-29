@@ -112,14 +112,16 @@ class PairProduct : public AbstractMachine<T> {
   }
 
   void InitLookup(VisibleConstType v, LookupType &lt) override {
-    // if (lt.VectorSize() == 0) {
-    //   lt.AddVector(b_.size());
-    // }
-    // if (lt.V(0).size() != b_.size()) {
-    //   lt.V(0).resize(b_.size());
-    // }
-    //
-    // lt.V(0) = (W_.transpose() * v + b_);
+    if (lt.MatrixSize() == 0) {
+      lt.AddMatrix(nv_, nv_);
+    }
+    for (int i = 0; i < nv_; ++i) {
+      rlist_[i] = (v(i) > 0) ? 2 * i : 2 * i + 1;
+    }
+    std::sort(rlist_.begin(), rlist_.end());
+    MatrixType X = Extract(rlist_);
+    Eigen::FullPivLU<MatrixType> lu(X);
+    lt.M(0) = lu.inverse();
   }
 
   void UpdateLookup(VisibleConstType v, const std::vector<int> &tochange,
@@ -150,7 +152,7 @@ class PairProduct : public AbstractMachine<T> {
   // Value of the logarithm of the wave-function
   T LogVal(VisibleConstType v) override {
     for (int i = 0; i < nv_; ++i) {
-      rlist_[i] = (v(i) > 0) ? i : i + nv_;
+      rlist_[i] = (v(i) > 0) ? 2 * i : 2 * i + 1;
     }
     std::sort(rlist_.begin(), rlist_.end());
 
@@ -163,7 +165,7 @@ class PairProduct : public AbstractMachine<T> {
   // using pre-computed look-up tables for efficiency
   T LogVal(VisibleConstType v, const LookupType & /*lt*/) override {
     for (int i = 0; i < nv_; ++i) {
-      rlist_[i] = (v(i) > 0) ? i : i + nv_;
+      rlist_[i] = (v(i) > 0) ? 2 * i : 2 * i + 1;
     }
     std::sort(rlist_.begin(), rlist_.end());
 
@@ -216,9 +218,10 @@ class PairProduct : public AbstractMachine<T> {
     der.setZero();
 
     for (int i = 0; i < nv_; ++i) {
-      rlist_[i] = (v(i) > 0) ? i : i + nv_;
+      rlist_[i] = (v(i) > 0) ? 2 * i : 2 * i + 1;
     }
     std::sort(rlist_.begin(), rlist_.end());
+
     MatrixType X = Extract(rlist_);
     Eigen::FullPivLU<MatrixType> lu(X);
     MatrixType Xinv = lu.inverse();
