@@ -44,7 +44,7 @@ class PairProduct : public AbstractMachine<T> {
   int npar_;
 
   // operator order
-  std::vector<int> rlist_;
+  Eigen::VectorXi rlist_;
 
   // Pair Product Parameters
   MatrixType F_;
@@ -114,35 +114,57 @@ class PairProduct : public AbstractMachine<T> {
   void InitLookup(VisibleConstType v, LookupType &lt) override {
     if (lt.MatrixSize() == 0) {
       lt.AddMatrix(nv_, nv_);
+      lt.AddMatrix(nv_, nv_);
+    }
+    if (lt.VectorSize() == 0) {
+      lt.AddVector(nv_);
     }
     for (int i = 0; i < nv_; ++i) {
-      rlist_[i] = (v(i) > 0) ? 2 * i : 2 * i + 1;
+      lt.V(0)(i) = (v(i) > 0) ? 2 * i : 2 * i + 1;
     }
     std::sort(rlist_.begin(), rlist_.end());
     MatrixType X = Extract(rlist_);
     Eigen::FullPivLU<MatrixType> lu(X);
-    lt.M(0) = lu.inverse();
+    lt.M(0) = X;
+    lt.M(1) = lu.inverse();
   }
 
   void UpdateLookup(VisibleConstType v, const std::vector<int> &tochange,
                     const std::vector<double> &newconf,
                     LookupType &lt) override {
-    // if (tochange.size() != 0) {
-    //   for (std::size_t s = 0; s < tochange.size(); s++) {
-    //     const int sf = tochange[s];
-    //     lt.V(0) += W_.row(sf) * (newconf[s] - v(sf));
-    //   }
-    // }
+    if (tochange.size() != 0) {
+      for (std::size_t s = 0; s < tochange.size(); s++) {
+        const int sf = tochange[s];
+        int beta = (newconf[s] > 0) ? 2 * sf : 2 * sf + 1;
+        VectorType b(nv_);
+        for (int j = 0; j < nv_; ++j) {
+          b(j) = (j != sf) ? F_(beta, lt.V(0)(j)) : F_(beta, beta);
+        }
+        VectorType bp = lt.M(1) * b;
+        VectorType Xinv_new(nv_, nv_);
+        for (int i = 0; i < nv_; ++i) {
+          for (int j = 0; j < nv_; ++j) {
+            Xinv_new(i, j) = lt.M(1)(i, j) +
+                             (1 / bp(sf)) * (-bp(i) * lt.M(1)(sf, j) +
+                                             bp(j) * lt.M(1)(sf, i) +
+                                             ((i == sf) ? lt.M(1)(sf, j) : 0) -
+                                             ((j == sf) ? lt.M(1)(sf, i) : 0));
+          }
+        }
+        lt.M(1) = Xinv_new;
+        lt.V(0)(sf) = beta;
+      }
+    }
   }
 
-  MatrixType Extract(const std::vector<int> &rlist) {
+  MatrixType Extract(const Eigen::VectorXi &rlist) {
     MatrixType X;
     X.resize(nv_, nv_);
     X.setZero();
     assert(rlist.size() == nv_);
     for (int i = 0; i < nv_; ++i) {
       for (int j = i + 1; j < nv_; ++j) {
-        X(i, j) = F_(rlist_[i], rlist_[j]);
+        X(i, j) = F_(rlist_(i), rlist_(j));
         X(j, i) = -X(i, j);
       }
     }
@@ -152,7 +174,7 @@ class PairProduct : public AbstractMachine<T> {
   // Value of the logarithm of the wave-function
   T LogVal(VisibleConstType v) override {
     for (int i = 0; i < nv_; ++i) {
-      rlist_[i] = (v(i) > 0) ? 2 * i : 2 * i + 1;
+      rlist_(i) = (v(i) > 0) ? 2 * i : 2 * i + 1;
     }
     std::sort(rlist_.begin(), rlist_.end());
 
@@ -165,7 +187,7 @@ class PairProduct : public AbstractMachine<T> {
   // using pre-computed look-up tables for efficiency
   T LogVal(VisibleConstType v, const LookupType & /*lt*/) override {
     for (int i = 0; i < nv_; ++i) {
-      rlist_[i] = (v(i) > 0) ? 2 * i : 2 * i + 1;
+      rlist_(i) = (v(i) > 0) ? 2 * i : 2 * i + 1;
     }
     std::sort(rlist_.begin(), rlist_.end());
 
@@ -218,7 +240,7 @@ class PairProduct : public AbstractMachine<T> {
     der.setZero();
 
     for (int i = 0; i < nv_; ++i) {
-      rlist_[i] = (v(i) > 0) ? 2 * i : 2 * i + 1;
+      rlist_(i) = (v(i) > 0) ? 2 * i : 2 * i + 1;
     }
     std::sort(rlist_.begin(), rlist_.end());
 
@@ -234,8 +256,8 @@ class PairProduct : public AbstractMachine<T> {
         Xprime.setZero();
         Xprime(i, j) = 1.0;
         Xprime(j, i) = -1.0;
-        int k = ((4 * nv_ - rlist_[i] - 1) * rlist_[i]) / 2 +
-                (rlist_[j] - 1 - rlist_[i]);
+        int k = ((4 * nv_ - rlist_(i) - 1) * rlist_(i)) / 2 +
+                (rlist_(j) - 1 - rlist_(i));
         der(k) = 0.5 * (Xinv * Xprime).trace();
       }
     }
