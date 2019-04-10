@@ -181,6 +181,36 @@ class RbmMultival : public AbstractMachine<T> {
     }
   }
 
+  VectorType DerLog(VisibleConstType v, const LookupType &lt) override {
+    VectorType der(npar_);
+    der.setZero();
+
+    int k = 0;
+
+    if (usea_) {
+      for (; k < nv_ * ls_; k++) {
+        der(k) = vtilde_(k);
+      }
+    }
+
+    RbmSpin<T>::tanh(lt.V(0), lnthetas_);
+
+    if (useb_) {
+      for (int p = 0; p < nh_; p++) {
+        der(k) = lnthetas_(p);
+        k++;
+      }
+    }
+
+    for (int i = 0; i < nv_ * ls_; i++) {
+      for (int j = 0; j < nh_; j++) {
+        der(k) = lnthetas_(j) * vtilde_(i);
+        k++;
+      }
+    }
+    return der;
+  }
+
   VectorType DerLog(VisibleConstType v) override {
     VectorType der(npar_);
     der.setZero();
