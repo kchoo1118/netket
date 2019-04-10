@@ -27,14 +27,7 @@ namespace netket {
 /** Restricted Boltzmann machine class with spin 1/2 hidden units.
  *
  */
-template <typename T>
-class PairProduct : public AbstractMachine<T> {
-  using VectorType = typename AbstractMachine<T>::VectorType;
-  using MatrixType = typename AbstractMachine<T>::MatrixType;
-  using VectorRefType = typename AbstractMachine<T>::VectorRefType;
-  using VectorConstRefType = typename AbstractMachine<T>::VectorConstRefType;
-  using VisibleConstType = typename AbstractMachine<T>::VisibleConstType;
-
+class PairProduct : public AbstractMachine {
   const AbstractHilbert &hilbert_;
 
   // number of visible units
@@ -53,9 +46,6 @@ class PairProduct : public AbstractMachine<T> {
   MatrixType X_;
 
  public:
-  using StateType = typename AbstractMachine<T>::StateType;
-  using LookupType = typename AbstractMachine<T>::LookupType;
-
   explicit PairProduct(const AbstractHilbert &hilbert)
       : hilbert_(hilbert), nv_(hilbert.Size()) {
     Init();
@@ -103,7 +93,7 @@ class PairProduct : public AbstractMachine<T> {
     int k = 0;
 
     for (int i = 0; i < 2 * nv_; i++) {
-      F_(i, i) = T(0.);
+      F_(i, i) = Complex(0.0);
       for (int j = i + 1; j < 2 * nv_; j++) {
         F_(i, j) = pars(k);
         F_(j, i) = -F_(i, j);  // create the lower triangle
@@ -185,7 +175,7 @@ class PairProduct : public AbstractMachine<T> {
   }
 
   // Value of the logarithm of the wave-function
-  T LogVal(VisibleConstType v) override {
+  Complex LogVal(VisibleConstType v) override {
     for (int i = 0; i < nv_; ++i) {
       rlist_(i) = (v(i) > 0) ? 2 * i : 2 * i + 1;
     }
@@ -197,7 +187,7 @@ class PairProduct : public AbstractMachine<T> {
 
   // Value of the logarithm of the wave-function
   // using pre-computed look-up tables for efficiency
-  T LogVal(VisibleConstType v, const LookupType & /*lt*/) override {
+  Complex LogVal(VisibleConstType v, const LookupType & /*lt*/) override {
     for (int i = 0; i < nv_; ++i) {
       rlist_(i) = (v(i) > 0) ? 2 * i : 2 * i + 1;
     }
@@ -272,9 +262,9 @@ class PairProduct : public AbstractMachine<T> {
   // Difference between logarithms of values, when one or more visible variables
   // are being flipped Version using pre-computed look-up tables for efficiency
   // on a small number of spin flips
-  T LogValDiff(VisibleConstType v, const std::vector<int> &tochange,
-               const std::vector<double> &newconf,
-               const LookupType &lt) override {
+  Complex LogValDiff(VisibleConstType v, const std::vector<int> &tochange,
+                     const std::vector<double> &newconf,
+                     const LookupType &lt) override {
     int tc_size = tochange.size();
     if (tc_size != 0) {
       int sf = tochange[0];

@@ -30,7 +30,7 @@ namespace py = pybind11;
 namespace netket {
 
 void AddPairProduct(py::module &subm) {
-  py::class_<PairProduct<StateType>, MachineType>(subm, "PairProduct", R"EOF(
+  py::class_<PairProduct, AbstractMachine>(subm, "PairProduct", R"EOF(
            A Gitzwiller-Projected Pair Product wavefunction machine.
            )EOF")
       .def(py::init<const AbstractHilbert &>(), py::keep_alive<1, 2>(),

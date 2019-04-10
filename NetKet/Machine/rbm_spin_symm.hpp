@@ -224,7 +224,7 @@ class RbmSpinSymm : public AbstractMachine {
       }
     }
 
-    RbmSpin<T>::tanh(lt.V(0), lnthetas_);
+    RbmSpin::tanh(lt.V(0), lnthetas_);
 
     if (useb_) {
       for (int p = 0; p < nh_; p++) {
