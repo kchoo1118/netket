@@ -223,6 +223,12 @@ class FFNN : public AbstractMachine<T> {
     return (lt.V(nlayer_ - 1))(0);
   }
 
+  VectorType DerLog(VisibleConstType v, const LookupType &lt) override {
+    VectorType der(npar_);
+    DerLog(v, der, lt);
+    return der;
+  }
+
   VectorType DerLog(VisibleConstType v) override {
     VectorType der(npar_);
     LookupType ltnew;

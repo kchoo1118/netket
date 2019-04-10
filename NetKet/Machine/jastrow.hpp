@@ -217,6 +217,10 @@ class Jastrow : public AbstractMachine<T> {
     return der;
   }
 
+  VectorType DerLog(VisibleConstType v, const LookupType & /*lt*/) override {
+    return DerLog(v);
+  }
+
   const AbstractHilbert &GetHilbert() const noexcept override {
     return hilbert_;
   }

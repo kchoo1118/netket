@@ -519,6 +519,10 @@ class MPSPeriodic : public AbstractMachine<T> {
     return std::log(trace(ltpM[Nleaves_ + N_ - 1]) / trace(lt.M(Nleaves_ - 1)));
   }
 
+  VectorType DerLog(VisibleConstType v, const LookupType & /*lt*/) override {
+    return DerLog(v);
+  }
+
   // Derivative with full calculation
   VectorType DerLog(VisibleConstType v) override {
     MatrixType temp_product(D_, Dsec_);

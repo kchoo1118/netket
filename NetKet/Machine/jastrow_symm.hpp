@@ -222,6 +222,10 @@ class JastrowSymm : public AbstractMachine<T> {
     return DerMatSymm_ * BareDerLog(v);
   }
 
+  VectorType DerLog(VisibleConstType v, const LookupType &lt) override {
+    return DerMatSymm_ * BareDerLog(v);
+  }
+
   VectorType GetParameters() override {
     VectorType pars(npar_);
 
