@@ -24,9 +24,7 @@
 
 namespace netket {
 
-/** Restricted Boltzmann machine class with spin 1/2 hidden units.
- *
- */
+// Symmetric PairProduct machine class for spin 1/2 degrees.
 class PairProductSymm : public AbstractMachine {
   const AbstractHilbert &hilbert_;
   const AbstractGraph &graph_;
