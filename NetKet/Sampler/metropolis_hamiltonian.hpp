@@ -154,6 +154,8 @@ class MetropolisHamiltonian : public AbstractSampler<WfType> {
 
   Eigen::VectorXd Visible() override { return v_; }
 
+  Eigen::VectorXcd Derivative() override { return psi_.DerLog(v_, lt_); }
+
   void SetVisible(const Eigen::VectorXd &v) override { v_ = v; }
 
   const AbstractHilbert &GetHilbert() const noexcept override {

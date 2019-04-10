@@ -218,6 +218,8 @@ class MetropolisHamiltonianPt : public AbstractSampler<WfType> {
 
   Eigen::VectorXd Visible() override { return v_[0]; }
 
+  Eigen::VectorXcd Derivative() override { return psi_.DerLog(v_[0], lt_[0]); }
+
   void SetVisible(const Eigen::VectorXd &v) override { v_[0] = v; }
 
   WfType &GetMachine() noexcept override { return psi_; }

@@ -30,7 +30,7 @@ namespace netket {
 
 // Metropolis sampling using custom moves provided by user
 template <class WfType>
-class CustomSampler: public AbstractSampler<WfType> {
+class CustomSampler : public AbstractSampler<WfType> {
   WfType &psi_;
   const AbstractHilbert &hilbert_;
   LocalOperator move_operators_;
@@ -156,6 +156,8 @@ class CustomSampler: public AbstractSampler<WfType> {
   }
 
   Eigen::VectorXd Visible() override { return v_; }
+
+  Eigen::VectorXcd Derivative() override { return psi_.DerLog(v_, lt_); }
 
   void SetVisible(const Eigen::VectorXd &v) override { v_ = v; }
 

@@ -27,7 +27,7 @@ namespace netket {
 // Metropolis sampling generating local exchanges
 // Parallel tempering is also used
 template <class WfType>
-class MetropolisExchangePt: public AbstractSampler<WfType> {
+class MetropolisExchangePt : public AbstractSampler<WfType> {
   WfType &psi_;
   const AbstractHilbert &hilbert_;
 
@@ -203,6 +203,8 @@ class MetropolisExchangePt: public AbstractSampler<WfType> {
   }
 
   Eigen::VectorXd Visible() override { return v_[0]; }
+
+  Eigen::VectorXcd Derivative() override { return psi_.DerLog(v_[0], lt_[0]); }
 
   void SetVisible(const Eigen::VectorXd &v) override { v_[0] = v; }
 

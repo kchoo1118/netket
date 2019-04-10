@@ -30,6 +30,8 @@ class AbstractSampler {
 
   virtual Eigen::VectorXd Visible() = 0;
 
+  virtual Eigen::VectorXcd Derivative() = 0;
+
   virtual void SetVisible(const Eigen::VectorXd& v) = 0;
 
   virtual WfType& GetMachine() noexcept = 0;

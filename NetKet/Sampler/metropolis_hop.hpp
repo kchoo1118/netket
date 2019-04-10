@@ -25,7 +25,7 @@ namespace netket {
 
 // Metropolis sampling generating local hoppings
 template <class WfType>
-class MetropolisHop: public AbstractSampler<WfType> {
+class MetropolisHop : public AbstractSampler<WfType> {
   WfType &psi_;
 
   const AbstractHilbert &hilbert_;
@@ -175,6 +175,8 @@ class MetropolisHop: public AbstractSampler<WfType> {
   }
 
   Eigen::VectorXd Visible() override { return v_; }
+
+  Eigen::VectorXcd Derivative() override { return psi_.DerLog(v_, lt_); }
 
   void SetVisible(const Eigen::VectorXd &v) override { v_ = v; }
 
