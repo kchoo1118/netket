@@ -30,6 +30,7 @@ class Lookup {
   std::vector<std::vector<VectorType>> vv_;
   std::vector<VectorType> v_;
   std::vector<MatrixType> m_;
+  std::vector<Eigen::VectorXi> vi_;
 
  public:
   // Lookup<T> &operator=(const Lookup<T> lt) {}
@@ -44,6 +45,11 @@ class Lookup {
     return v_.size() - 1;
   }
 
+  int AddVector_i(int a) {
+    vi_.push_back(Eigen::VectorXi(a));
+    return vi_.size() - 1;
+  }
+
   int AddMatrix(int a, int b) {
     m_.push_back(MatrixType(a, b));
     return m_.size() - 1;
@@ -52,6 +58,8 @@ class Lookup {
   int VVSize() { return vv_.size(); }
 
   int VectorSize() { return v_.size(); }
+
+  int VectoriSize() { return vi_.size(); }
 
   int MatrixSize() { return m_.size(); }
 
@@ -73,6 +81,16 @@ class Lookup {
   const VectorType &V(std::size_t i) const {
     assert(i < v_.size() && i >= 0);
     return v_[i];
+  }
+
+  Eigen::VectorXi &Vi(std::size_t i) {
+    assert(i < vi_.size() && i >= 0);
+    return vi_[i];
+  }
+
+  const Eigen::VectorXi &Vi(std::size_t i) const {
+    assert(i < vi_.size() && i >= 0);
+    return vi_[i];
   }
 
   MatrixType &M(std::size_t i) {
