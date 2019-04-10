@@ -67,8 +67,9 @@ class PairProduct : public AbstractMachine<T> {
     X_.resize(nv_, nv_);
     rlist_.resize(nv_);
 
-    InfoMessage() << "Gutzwiller Projected Pair Product WF Initizialized"
-                  << std::endl;
+    InfoMessage()
+        << "Gutzwiller Projected Pair Product WF Initizialized with nvisible = "
+        << nv_ << " and nparams = " << npar_ << std::endl;
   }
 
   int Nvisible() const override { return nv_; }
@@ -114,19 +115,17 @@ class PairProduct : public AbstractMachine<T> {
   void InitLookup(VisibleConstType v, LookupType &lt) override {
     if (lt.MatrixSize() == 0) {
       lt.AddMatrix(nv_, nv_);
-      lt.AddMatrix(nv_, nv_);
     }
-    if (lt.VectorSize() == 0) {
-      lt.AddVector(nv_);
+    if (lt.VectoriSize() == 0) {
+      lt.AddVector_i(nv_);
     }
     for (int i = 0; i < nv_; ++i) {
-      lt.V(0)(i) = (v(i) > 0) ? 2 * i : 2 * i + 1;
+      lt.Vi(0)(i) = (v(i) > 0) ? 2 * i : 2 * i + 1;
     }
-    std::sort(rlist_.begin(), rlist_.end());
-    MatrixType X = Extract(rlist_);
+    MatrixType X;
+    Extract(lt.Vi(0), X);
     Eigen::FullPivLU<MatrixType> lu(X);
-    lt.M(0) = X;
-    lt.M(1) = lu.inverse();
+    lt.M(0) = lu.inverse();
   }
 
   void UpdateLookup(VisibleConstType v, const std::vector<int> &tochange,
@@ -138,37 +137,42 @@ class PairProduct : public AbstractMachine<T> {
         int beta = (newconf[s] > 0) ? 2 * sf : 2 * sf + 1;
         VectorType b(nv_);
         for (int j = 0; j < nv_; ++j) {
-          b(j) = (j != sf) ? F_(beta, lt.V(0)(j)) : F_(beta, beta);
+          b(j) = (j != sf) ? F_(beta, lt.Vi(0)(j)) : F_(beta, beta);
         }
-        VectorType bp = lt.M(1) * b;
-        VectorType Xinv_new(nv_, nv_);
-        for (int i = 0; i < nv_; ++i) {
-          for (int j = 0; j < nv_; ++j) {
-            Xinv_new(i, j) = lt.M(1)(i, j) +
-                             (1 / bp(sf)) * (-bp(i) * lt.M(1)(sf, j) +
-                                             bp(j) * lt.M(1)(sf, i) +
-                                             ((i == sf) ? lt.M(1)(sf, j) : 0) -
-                                             ((j == sf) ? lt.M(1)(sf, i) : 0));
-          }
-        }
-        lt.M(1) = Xinv_new;
-        lt.V(0)(sf) = beta;
+        VectorType bp = -lt.M(0) * b;
+        std::complex<double> c = 1.0 / bp(sf);
+        MatrixType temp = bp * lt.M(0).row(sf);
+        lt.M(0).row(sf) *= (1.0 + c);
+        lt.M(0).col(sf) *= (1.0 + c);
+        lt.M(0) -= c * (temp - temp.transpose());
+        lt.Vi(0)(sf) = beta;
       }
     }
   }
 
   MatrixType Extract(const Eigen::VectorXi &rlist) {
-    MatrixType X;
+    MatrixType X(nv_, nv_);
+    X.setZero();
+    assert(rlist.size() == nv_);
+    for (int i = 0; i < nv_; ++i) {
+      for (int j = i + 1; j < nv_; ++j) {
+        X(i, j) = F_(rlist(i), rlist(j));
+        X(j, i) = -X(i, j);
+      }
+    }
+    return X;
+  }
+
+  void Extract(const Eigen::VectorXi &rlist, MatrixType &X) {
     X.resize(nv_, nv_);
     X.setZero();
     assert(rlist.size() == nv_);
     for (int i = 0; i < nv_; ++i) {
       for (int j = i + 1; j < nv_; ++j) {
-        X(i, j) = F_(rlist_(i), rlist_(j));
+        X(i, j) = F_(rlist(i), rlist(j));
         X(j, i) = -X(i, j);
       }
     }
-    return X;
   }
 
   // Value of the logarithm of the wave-function
@@ -176,7 +180,6 @@ class PairProduct : public AbstractMachine<T> {
     for (int i = 0; i < nv_; ++i) {
       rlist_(i) = (v(i) > 0) ? 2 * i : 2 * i + 1;
     }
-    std::sort(rlist_.begin(), rlist_.end());
 
     std::complex<double> pfaffian;
     skpfa(nv_, Extract(rlist_).data(), &pfaffian, "L", "P");
@@ -189,7 +192,6 @@ class PairProduct : public AbstractMachine<T> {
     for (int i = 0; i < nv_; ++i) {
       rlist_(i) = (v(i) > 0) ? 2 * i : 2 * i + 1;
     }
-    std::sort(rlist_.begin(), rlist_.end());
 
     std::complex<double> pfaffian;
     skpfa(nv_, Extract(rlist_).data(), &pfaffian, "L", "P");
@@ -201,23 +203,57 @@ class PairProduct : public AbstractMachine<T> {
   VectorType LogValDiff(
       VisibleConstType v, const std::vector<std::vector<int>> &tochange,
       const std::vector<std::vector<double>> &newconf) override {
-    Eigen::VectorXd vflip = v;
+    // Eigen::VectorXd vflip = v;
+    // const std::size_t nconn = tochange.size();
+    // VectorType logvaldiffs = VectorType::Zero(nconn);
+    //
+    // std::complex<double> current_val = LogVal(v);
+    //
+    // for (std::size_t k = 0; k < nconn; k++) {
+    //   if (tochange[k].size() != 0) {
+    //     for (std::size_t s = 0; s < tochange[k].size(); s++) {
+    //       const int sf = tochange[k][s];
+    //       vflip(sf) = newconf[k][s];
+    //     }
+    //     logvaldiffs(k) += LogVal(vflip) - current_val;
+    //     for (std::size_t s = 0; s < tochange[k].size(); s++) {
+    //       const int sf = tochange[k][s];
+    //       vflip(sf) = v(sf);
+    //     }
+    //   }
+    // }
+
     const std::size_t nconn = tochange.size();
     VectorType logvaldiffs = VectorType::Zero(nconn);
-
-    std::complex<double> current_val = LogVal(v);
-
+    LookupType lt;
+    InitLookup(v, lt);
     for (std::size_t k = 0; k < nconn; k++) {
-      if (tochange[k].size() != 0) {
-        for (std::size_t s = 0; s < tochange[k].size(); s++) {
-          const int sf = tochange[k][s];
-          vflip(sf) = newconf[k][s];
+      int tc_size = tochange[k].size();
+      if (tc_size != 0) {
+        int sf = tochange[k][0];
+        int beta = (newconf[k][0] > 0) ? 2 * sf : 2 * sf + 1;
+        VectorType b(nv_);
+        for (int j = 0; j < nv_; ++j) {
+          b(j) = (j != sf) ? F_(beta, lt.Vi(0)(j)) : F_(beta, beta);
         }
-        logvaldiffs(k) += LogVal(vflip) - current_val;
-        for (std::size_t s = 0; s < tochange[k].size(); s++) {
-          const int sf = tochange[k][s];
-          vflip(sf) = v(sf);
+        std::complex<double> ratio = (-lt.M(0).row(sf) * b)(0);
+
+        if (tc_size > 1) {
+          LookupType lt_prime = lt;
+          for (std::size_t s = 1; s < tc_size; s++) {
+            std::vector<int> tochange_prime = {tochange[k][s - 1]};
+            std::vector<double> newconf_prime = {newconf[k][s - 1]};
+            UpdateLookup(v, tochange_prime, newconf_prime, lt_prime);
+
+            sf = tochange[k][s];
+            beta = (newconf[k][s] > 0) ? 2 * sf : 2 * sf + 1;
+            for (int j = 0; j < nv_; ++j) {
+              b(j) = (j != sf) ? F_(beta, lt_prime.Vi(0)(j)) : F_(beta, beta);
+            }
+            ratio *= (-lt_prime.M(0).row(sf) * b)(0);
+          }
         }
+        logvaldiffs(k) = std::log(ratio);
       }
     }
     return logvaldiffs;
@@ -229,36 +265,51 @@ class PairProduct : public AbstractMachine<T> {
   T LogValDiff(VisibleConstType v, const std::vector<int> &tochange,
                const std::vector<double> &newconf,
                const LookupType &lt) override {
-    Eigen::VectorXd vflip = v;
-    hilbert_.UpdateConf(vflip, tochange, newconf);
+    int tc_size = tochange.size();
+    if (tc_size != 0) {
+      int sf = tochange[0];
+      int beta = (newconf[0] > 0) ? 2 * sf : 2 * sf + 1;
+      VectorType b(nv_);
+      for (int j = 0; j < nv_; ++j) {
+        b(j) = (j != sf) ? F_(beta, lt.Vi(0)(j)) : F_(beta, beta);
+      }
+      std::complex<double> ratio = (-lt.M(0).row(sf) * b)(0);
+      if (tc_size > 1) {
+        LookupType lt_prime = lt;
+        for (std::size_t s = 1; s < tochange.size(); s++) {
+          std::vector<int> tochange_prime = {tochange[s - 1]};
+          std::vector<double> newconf_prime = {newconf[s - 1]};
+          UpdateLookup(v, tochange_prime, newconf_prime, lt_prime);
 
-    return LogVal(vflip) - LogVal(v);
+          sf = tochange[s];
+          beta = (newconf[s] > 0) ? 2 * sf : 2 * sf + 1;
+          for (int j = 0; j < nv_; ++j) {
+            b(j) = (j != sf) ? F_(beta, lt_prime.Vi(0)(j)) : F_(beta, beta);
+          }
+          ratio *= (-lt_prime.M(0).row(sf) * b)(0);
+        }
+      }
+      return std::log(ratio);
+    } else {
+      return 0.0;
+    }
+    // Eigen::VectorXd vflip = v;
+    // hilbert_.UpdateConf(vflip, tochange, newconf);
+    // return LogVal(vflip) - LogVal(v);
   }
 
   VectorType DerLog(VisibleConstType v) override {
     VectorType der(npar_);
     der.setZero();
 
-    for (int i = 0; i < nv_; ++i) {
-      rlist_(i) = (v(i) > 0) ? 2 * i : 2 * i + 1;
-    }
-    std::sort(rlist_.begin(), rlist_.end());
-
-    MatrixType X = Extract(rlist_);
-    Eigen::FullPivLU<MatrixType> lu(X);
-    MatrixType Xinv = lu.inverse();
-    MatrixType Xprime;
-    Xprime.resize(nv_, nv_);
-    Xprime.setZero();
+    LookupType lt;
+    InitLookup(v, lt);
 
     for (int i = 0; i < nv_; i++) {
       for (int j = i + 1; j < nv_; j++) {
-        Xprime.setZero();
-        Xprime(i, j) = 1.0;
-        Xprime(j, i) = -1.0;
-        int k = ((4 * nv_ - rlist_(i) - 1) * rlist_(i)) / 2 +
-                (rlist_(j) - 1 - rlist_(i));
-        der(k) = 0.5 * (Xinv * Xprime).trace();
+        int k = ((4 * nv_ - lt.Vi(0)(i) - 1) * lt.Vi(0)(i)) / 2 +
+                (lt.Vi(0)(j) - 1 - lt.Vi(0)(i));
+        der(k) = 0.5 * (-lt.M(0)(i, j) + lt.M(0)(j, i));
       }
     }
     return der;
