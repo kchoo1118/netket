@@ -17,6 +17,8 @@ hi = nk.hilbert.Spin(s=0.5, graph=g)
 
 machines["PairProduct 1d Hypercube spin"] = nk.machine.PairProduct(hilbert=hi)
 
+machines["PairProductSymm 1d Hypercube spin"] = nk.machine.PairProductSymm(hilbert=hi)
+
 machines["RbmSpin 1d Hypercube spin"] = nk.machine.RbmSpin(
     hilbert=hi, alpha=1)
 
