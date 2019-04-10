@@ -118,10 +118,12 @@ class PairProduct : public AbstractMachine<T> {
     }
     if (lt.VectoriSize() == 0) {
       lt.AddVector_i(nv_);
+      lt.AddVector_i(1);
     }
     for (int i = 0; i < nv_; ++i) {
       lt.Vi(0)(i) = (v(i) > 0) ? 2 * i : 2 * i + 1;
     }
+    lt.Vi(1)(0) = 0;
     MatrixType X;
     Extract(lt.Vi(0), X);
     Eigen::FullPivLU<MatrixType> lu(X);
@@ -131,22 +133,29 @@ class PairProduct : public AbstractMachine<T> {
   void UpdateLookup(VisibleConstType v, const std::vector<int> &tochange,
                     const std::vector<double> &newconf,
                     LookupType &lt) override {
-    if (tochange.size() != 0) {
-      for (std::size_t s = 0; s < tochange.size(); s++) {
-        const int sf = tochange[s];
-        int beta = (newconf[s] > 0) ? 2 * sf : 2 * sf + 1;
-        VectorType b(nv_);
-        for (int j = 0; j < nv_; ++j) {
-          b(j) = (j != sf) ? F_(beta, lt.Vi(0)(j)) : F_(beta, beta);
+    if (lt.Vi(1)(0) < nv_) {
+      if (tochange.size() != 0) {
+        for (std::size_t s = 0; s < tochange.size(); s++) {
+          const int sf = tochange[s];
+          int beta = (newconf[s] > 0) ? 2 * sf : 2 * sf + 1;
+          VectorType b(nv_);
+          for (int j = 0; j < nv_; ++j) {
+            b(j) = (j != sf) ? F_(beta, lt.Vi(0)(j)) : F_(beta, beta);
+          }
+          VectorType bp = -lt.M(0) * b;
+          std::complex<double> c = 1.0 / bp(sf);
+          MatrixType temp = bp * lt.M(0).row(sf);
+          lt.M(0).row(sf) *= (1.0 + c);
+          lt.M(0).col(sf) *= (1.0 + c);
+          lt.M(0) -= c * (temp - temp.transpose());
+          lt.Vi(0)(sf) = beta;
+          lt.Vi(1)(0) += 1;
         }
-        VectorType bp = -lt.M(0) * b;
-        std::complex<double> c = 1.0 / bp(sf);
-        MatrixType temp = bp * lt.M(0).row(sf);
-        lt.M(0).row(sf) *= (1.0 + c);
-        lt.M(0).col(sf) *= (1.0 + c);
-        lt.M(0) -= c * (temp - temp.transpose());
-        lt.Vi(0)(sf) = beta;
       }
+    } else {
+      Eigen::VectorXd vnew = v;
+      hilbert_.UpdateConf(vnew, tochange, newconf);
+      InitLookup(vnew, lt);
     }
   }
 
@@ -205,7 +214,7 @@ class PairProduct : public AbstractMachine<T> {
       const std::vector<std::vector<double>> &newconf) override {
     // Eigen::VectorXd vflip = v;
     // const std::size_t nconn = tochange.size();
-    // VectorType logvaldiffs = VectorType::Zero(nconn);
+    // VectorType logvaldiffs2 = VectorType::Zero(nconn);
     //
     // std::complex<double> current_val = LogVal(v);
     //
@@ -215,7 +224,7 @@ class PairProduct : public AbstractMachine<T> {
     //       const int sf = tochange[k][s];
     //       vflip(sf) = newconf[k][s];
     //     }
-    //     logvaldiffs(k) += LogVal(vflip) - current_val;
+    //     logvaldiffs2(k) += LogVal(vflip) - current_val;
     //     for (std::size_t s = 0; s < tochange[k].size(); s++) {
     //       const int sf = tochange[k][s];
     //       vflip(sf) = v(sf);
@@ -256,6 +265,7 @@ class PairProduct : public AbstractMachine<T> {
         logvaldiffs(k) = std::log(ratio);
       }
     }
+
     return logvaldiffs;
   }
 
@@ -296,6 +306,20 @@ class PairProduct : public AbstractMachine<T> {
     // Eigen::VectorXd vflip = v;
     // hilbert_.UpdateConf(vflip, tochange, newconf);
     // return LogVal(vflip) - LogVal(v);
+  }
+
+  VectorType DerLog(VisibleConstType v, const LookupType &lt) override {
+    VectorType der(npar_);
+    der.setZero();
+
+    for (int i = 0; i < nv_; i++) {
+      for (int j = i + 1; j < nv_; j++) {
+        int k = ((4 * nv_ - lt.Vi(0)(i) - 1) * lt.Vi(0)(i)) / 2 +
+                (lt.Vi(0)(j) - 1 - lt.Vi(0)(i));
+        der(k) = 0.5 * (-lt.M(0)(i, j) + lt.M(0)(j, i));
+      }
+    }
+    return der;
   }
 
   VectorType DerLog(VisibleConstType v) override {
