@@ -366,18 +366,46 @@ class PairProductSymm : public AbstractMachine {
       }
       std::complex<double> ratio = (-lt.M(0).row(sf) * b)(0);
       if (tc_size > 1) {
-        LookupType lt_prime = lt;
-        for (std::size_t s = 1; s < tochange.size(); s++) {
-          std::vector<int> tochange_prime = {tochange[s - 1]};
-          std::vector<double> newconf_prime = {newconf[s - 1]};
-          UpdateLookup(v, tochange_prime, newconf_prime, lt_prime);
-
-          sf = tochange[s];
-          beta = (newconf[s] > 0) ? 2 * sf : 2 * sf + 1;
+        if (tc_size == 2) {
+          sf = tochange[0];
+          beta = (newconf[0] > 0) ? 2 * sf : 2 * sf + 1;
           for (int j = 0; j < nv_; ++j) {
-            b(j) = (j != sf) ? F_(beta, lt_prime.Vi(0)(j)) : F_(beta, beta);
+            b(j) = (j != sf) ? F_(beta, lt.Vi(0)(j)) : F_(beta, beta);
           }
-          ratio *= (-lt_prime.M(0).row(sf) * b)(0);
+
+          VectorType bp = -lt.M(0) * b;
+          std::complex<double> c = 1.0 / bp(sf);
+          VectorType temp2 = lt.M(0).row(tochange[1]);
+          temp2(sf) *= (1.0 + c);
+          if (tochange[1] == tochange[0]) {
+            temp2 *= (1.0 + c);
+          }
+          VectorType temp = bp(tochange[1]) * lt.M(0).row(sf) -
+                            lt.M(0).row(sf)(tochange[1]) * bp.transpose();
+          temp2 = temp2 - c * temp;
+          Eigen::VectorXi VV = lt.Vi(0);
+          VV(sf) = beta;
+
+          sf = tochange[1];
+          beta = (newconf[1] > 0) ? 2 * sf : 2 * sf + 1;
+          for (int j = 0; j < nv_; ++j) {
+            b(j) = (j != sf) ? F_(beta, VV(j)) : F_(beta, beta);
+          }
+          ratio *= (-temp2.transpose() * b)(0);
+        } else {
+          LookupType lt_prime = lt;
+          for (std::size_t s = 1; s < tochange.size(); s++) {
+            std::vector<int> tochange_prime = {tochange[s - 1]};
+            std::vector<double> newconf_prime = {newconf[s - 1]};
+            UpdateLookup(v, tochange_prime, newconf_prime, lt_prime);
+
+            sf = tochange[s];
+            beta = (newconf[s] > 0) ? 2 * sf : 2 * sf + 1;
+            for (int j = 0; j < nv_; ++j) {
+              b(j) = (j != sf) ? F_(beta, lt_prime.Vi(0)(j)) : F_(beta, beta);
+            }
+            ratio *= (-lt_prime.M(0).row(sf) * b)(0);
+          }
         }
       }
       return std::log(ratio);
