@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NETKET_QUBITOPERATOR_HPP
-#define NETKET_QUBITOPERATOR_HPP
+#ifndef NETKET_QUBITPMOPERATOR_HPP
+#define NETKET_QUBITPMOPERATOR_HPP
 
 #include <mpi.h>
 #include <Eigen/Dense>
@@ -27,7 +27,7 @@ namespace netket {
 
 // Heisenberg model on an arbitrary graph
 
-class QubitOperator : public AbstractOperator {
+class QubitPMOperator : public AbstractOperator {
   const AbstractHilbert &hilbert_;
 
   const int nqubits_;
@@ -49,9 +49,9 @@ class QubitOperator : public AbstractOperator {
   using VectorRefType = AbstractOperator::VectorRefType;
   using VectorConstRefType = AbstractOperator::VectorConstRefType;
 
-  explicit QubitOperator(const AbstractHilbert &hilbert,
-                         const std::vector<std::string> &ops,
-                         const std::vector<std::complex<double>> &opweights)
+  explicit QubitPMOperator(const AbstractHilbert &hilbert,
+                           const std::vector<std::string> &ops,
+                           const std::vector<std::complex<double>> &opweights)
       : hilbert_(hilbert),
         nqubits_(hilbert.Size()),
         noperators_(ops.size()),
@@ -59,27 +59,27 @@ class QubitOperator : public AbstractOperator {
         I_(std::complex<double>(0, 1)) {
     tochange_.resize(noperators_);
     zcheck_.resize(noperators_);
-    int nchanges = 0;
 
     for (int i = 0; i < noperators_; i++) {
+      int nchanges = 0;
       if (ops[i].size() != std::size_t(nqubits_)) {
         throw InvalidInputError(
             "Operator size is inconsistent with number of qubits");
       }
       for (int j = 0; j < nqubits_; j++) {
-        if (ops[i][j] == 'X') {
+        if (ops[i][j] == 'S') {
           tochange_[i].push_back(j);
           nchanges++;
         }
-        if (ops[i][j] == 'Y') {
-          tochange_[i].push_back(j);
-          weights_[i] *= I_;
-          zcheck_[i].push_back(j);
-          nchanges++;
+        if (nchanges > 2) {
+          throw InvalidInputError("Operator might not be hermitian");
         }
         if (ops[i][j] == 'Z') {
           zcheck_[i].push_back(j);
         }
+      }
+      if (nchanges == 1) {
+        throw InvalidInputError("Operator might not be hermitian");
       }
     }
 
@@ -96,7 +96,6 @@ class QubitOperator : public AbstractOperator {
     InfoMessage() << "Constrained Qubits Hamiltonian created " << std::endl;
     InfoMessage() << "Nqubits = " << nqubits_ << std::endl;
     InfoMessage() << "Noperators = " << noperators_ << std::endl;
-    InfoMessage() << "Nchanges = " << nchanges << std::endl;
   }
 
   void FindConn(VectorConstRefType v, std::vector<std::complex<double>> &mel,
@@ -104,33 +103,42 @@ class QubitOperator : public AbstractOperator {
                 std::vector<std::vector<double>> &newconfs) const override {
     assert(v.size() == nqubits_);
 
-    connectors.resize(tochange_.size());
-    connectors = tochange_;
-
+    connectors.clear();
+    connectors.resize(1);
     newconfs.clear();
-    newconfs.resize(noperators_);
-    mel.clear();
-    mel.resize(noperators_);
+    newconfs.resize(1);
+    mel.resize(1);
+
+    // computing diagonal term
+    mel[0] = 0.0;
+    connectors[0].resize(0);
+    newconfs[0].resize(0);
 
     for (int i = 0; i < noperators_; i++) {
-      mel[i] = weights_[i];
-      for (auto j : zcheck_[i]) {
-        assert(j >= 0 && j < v.size());
+      if (int(tochange_[i].size()) == 2) {
+        if (v(tochange_[i][0]) != v(tochange_[i][1])) {
+          connectors.push_back(
+              std::vector<int>({tochange_[i][0], tochange_[i][1]}));
+          newconfs.push_back(
+              std::vector<double>({v(tochange_[i][1]), v(tochange_[i][0])}));
+          mel.push_back(weights_[i]);
 
-        if (int(std::round(v(j))) == 1) {
-          mel[i] *= -1.;
+          for (auto j : zcheck_[i]) {
+            assert(j >= 0 && j < v.size());
+            if (int(std::round(v(j))) == 1) {
+              mel.back() *= -1.0;
+            }
+          }
         }
-      }
-      newconfs[i].resize(tochange_[i].size());
-      int j = 0;
-      for (auto sj : tochange_[i]) {
-        assert(sj < v.size() && sj >= 0);
-        if (int(std::round(v(sj))) == 0) {
-          newconfs[i][j] = 1;
-        } else {
-          newconfs[i][j] = 0;
+      } else if (int(tochange_[i].size()) == 0) {
+        std::complex<double> w = weights_[i];
+        for (auto j : zcheck_[i]) {
+          assert(j >= 0 && j < v.size());
+          if (int(std::round(v(j))) == 1) {
+            w *= -1.;
+          }
         }
-        j++;
+        mel[0] += w;
       }
     }
   }
