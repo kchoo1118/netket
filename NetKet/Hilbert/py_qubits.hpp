@@ -52,7 +52,7 @@ void AddQubits(py::module &subm) {
                ```
            )EOF")
       .def(py::init<const AbstractGraph &, double>(), py::keep_alive<1, 2>(),
-           py::arg("graph"), py::arg("total_sz"), R"EOF(
+           py::arg("graph"), py::arg("total_up"), R"EOF(
             Constructs a new ``Qubit`` given a graph.
 
             Args:

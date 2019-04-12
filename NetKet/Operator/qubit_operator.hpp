@@ -93,7 +93,7 @@ class QubitOperator : public AbstractOperator {
     distrandconn_ =
         std::discrete_distribution<>(randweights_.begin(), randweights_.end());
 
-    InfoMessage() << "Qubits Hamiltonian created " << std::endl;
+    InfoMessage() << "Qubits Operator created " << std::endl;
     InfoMessage() << "Nqubits = " << nqubits_ << std::endl;
     InfoMessage() << "Noperators = " << noperators_ << std::endl;
     InfoMessage() << "Nchanges = " << nchanges << std::endl;

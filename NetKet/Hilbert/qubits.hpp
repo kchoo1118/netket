@@ -38,22 +38,22 @@ class Qubit : public AbstractHilbert {
 
   int nqubits_;
 
-  double totalS_;
-  bool constraintSz_;
+  double totalUp_;
+  bool constraintUp_;
 
  public:
   explicit Qubit(const AbstractGraph &graph) : graph_(graph) {
     const int nqubits = graph.Size();
     Init(nqubits);
 
-    constraintSz_ = false;
+    constraintUp_ = false;
   }
 
-  explicit Qubit(const AbstractGraph &graph, double totalSz) : graph_(graph) {
+  explicit Qubit(const AbstractGraph &graph, int totalUp) : graph_(graph) {
     const int nqubits = graph.Size();
     Init(nqubits);
 
-    SetConstraint(totalSz);
+    SetConstraint(totalUp);
   }
 
   void Init(int nqubits) {
@@ -65,19 +65,14 @@ class Qubit : public AbstractHilbert {
     local_[1] = 1;
   }
 
-  void SetConstraint(double totalS) {
-    constraintSz_ = true;
-    totalS_ = totalS;
-    int m = std::round(totalS);
-    if (std::abs(m) > nqubits_) {
+  void SetConstraint(int totalUp) {
+    constraintUp_ = true;
+    totalUp_ = totalUp;
+    int m = totalUp;
+    if (m > nqubits_ || m < 0) {
       throw InvalidInputError(
-          "Cannot fix the total magnetization: 2|M| cannot "
+          "Cannot fix the total number of 1 bits: |M| cannot "
           "exceed Nqubits.");
-    }
-    if ((nqubits_ + m) % 2 != 0) {
-      throw InvalidInputError(
-          "Cannot fix the total magnetization: Nqubits + "
-          "totalSz must be even.");
     }
   }
 
@@ -93,7 +88,7 @@ class Qubit : public AbstractHilbert {
                   netket::default_random_engine &rgen) const override {
     std::uniform_int_distribution<int> distribution(0, 1);
 
-    if (!constraintSz_) {
+    if (!constraintUp_) {
       assert(state.size() == nqubits_);
 
       // unconstrained random
@@ -104,21 +99,16 @@ class Qubit : public AbstractHilbert {
       using std::begin;
       using std::end;
       // Magnetisation as a count
-      int m = totalS_;
-      if (std::abs(m) > nqubits_) {
+      int m = totalUp_;
+      if (m > nqubits_ || m < 0) {
         throw InvalidInputError(
-            "Cannot fix the total magnetization: 2|M| cannot "
-            "exceed Nspins.");
+            "Cannot fix the total number of 1 bits: |M| cannot "
+            "exceed Nqubits.");
       }
-      if ((nqubits_ + m) % 2 != 0) {
-        throw InvalidInputError(
-            "Cannot fix the total magnetization: Nspins + "
-            "totalSz must be even.");
-      }
-      int nup = (nqubits_ + m) / 2;
-      int ndown = (nqubits_ - m) / 2;
-      std::fill_n(state.data(), nup, 0.0);
-      std::fill_n(state.data() + nup, ndown, 1.0);
+      int nup = m;
+      int ndown = nqubits_ - m;
+      std::fill_n(state.data(), nup, 1.0);
+      std::fill_n(state.data() + nup, ndown, 0.0);
       std::shuffle(state.data(), state.data() + nqubits_, rgen);
       return;
     }
