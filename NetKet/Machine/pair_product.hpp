@@ -46,7 +46,7 @@ class PairProduct : public AbstractMachine {
   double c_;
 
  public:
-  explicit PairProduct(const AbstractHilbert &hilbert, bool use_singlet = false)
+  explicit PairProduct(const AbstractHilbert &hilbert)
       : hilbert_(hilbert), nv_(hilbert.Size()) {
     if (hilbert_.LocalSize() != 2) {
       throw InvalidInputError(
