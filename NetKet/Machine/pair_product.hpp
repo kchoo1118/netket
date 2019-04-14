@@ -44,16 +44,16 @@ class PairProduct : public AbstractMachine {
   MatrixType X_;
 
  public:
-  explicit PairProduct(const AbstractHilbert &hilbert)
+  explicit PairProduct(const AbstractHilbert &hilbert, bool use_singlet = false)
       : hilbert_(hilbert), nv_(hilbert.Size()) {
     Init();
   }
 
   void Init() {
     F_.resize(2 * nv_, 2 * nv_);
-    npar_ = (2 * nv_ - 1) * nv_;
     X_.resize(nv_, nv_);
     rlist_.resize(nv_);
+    npar_ = (2 * nv_ - 1) * nv_;
 
     InfoMessage()
         << "Gutzwiller Projected Pair Product WF Initizialized with nvisible = "
@@ -90,8 +90,8 @@ class PairProduct : public AbstractMachine {
   void SetParameters(VectorConstRefType pars) override {
     int k = 0;
 
+    F_.setZero();
     for (int i = 0; i < 2 * nv_; i++) {
-      F_(i, i) = Complex(0.0);
       for (int j = i + 1; j < 2 * nv_; j++) {
         F_(i, j) = pars(k);
         F_(j, i) = -F_(i, j);  // create the lower triangle
@@ -132,10 +132,11 @@ class PairProduct : public AbstractMachine {
           }
           VectorType bp = -lt.M(0) * b;
           std::complex<double> c = 1.0 / bp(sf);
-          MatrixType temp = bp * lt.M(0).row(sf);
           lt.M(0).row(sf) *= (1.0 + c);
           lt.M(0).col(sf) *= (1.0 + c);
-          lt.M(0) -= c * (temp - temp.transpose());
+          lt.M(0) -= (bp * lt.M(0).row(sf) -
+                      lt.M(0).row(sf).transpose() * bp.transpose()) /
+                     (1.0 + bp(sf));
           lt.Vi(0)(sf) = beta;
           lt.Vi(1)(0) += 1;
         }
@@ -229,13 +230,14 @@ class PairProduct : public AbstractMachine {
       if (tc_size != 0) {
         int sf = tochange[k][0];
         int beta = (newconf[k][0] > 0) ? 2 * sf : 2 * sf + 1;
-        VectorType b(nv_);
-        for (int j = 0; j < nv_; ++j) {
-          b(j) = (j != sf) ? F_(beta, lt.Vi(0)(j)) : F_(beta, beta);
+        std::complex<double> ratio = 0.0;
+        for (int i = 0; i < nv_; ++i) {
+          if (i != sf) {
+            ratio += -lt.M(0).row(sf)(i) * F_(beta, lt.Vi(0)(i));
+          }
         }
-        std::complex<double> ratio = (-lt.M(0).row(sf) * b)(0);
-
         if (tc_size > 1) {
+          VectorType b(nv_);
           if (tc_size == 2) {
             sf = tochange[k][0];
             beta = (newconf[k][0] > 0) ? 2 * sf : 2 * sf + 1;
@@ -245,14 +247,12 @@ class PairProduct : public AbstractMachine {
 
             VectorType bp = -lt.M(0) * b;
             std::complex<double> c = 1.0 / bp(sf);
-            VectorType temp = bp(tochange[k][1]) * lt.M(0).row(sf) -
-                              lt.M(0).row(sf)(tochange[k][1]) * bp.transpose();
             VectorType temp2 = lt.M(0).row(tochange[k][1]);
             temp2(sf) *= (1.0 + c);
-            if (tochange[k][1] == tochange[k][0]) {
-              temp2 *= (1.0 + c);
-            }
-            temp2 = temp2 - c * temp;
+            temp2 =
+                temp2 - c * (bp(tochange[k][1]) * lt.M(0).row(sf) -
+                             lt.M(0).row(sf)(tochange[k][1]) * bp.transpose())
+                                .transpose();
             Eigen::VectorXi VV = lt.Vi(0);
             VV(sf) = beta;
 
@@ -295,12 +295,14 @@ class PairProduct : public AbstractMachine {
     if (tc_size != 0) {
       int sf = tochange[0];
       int beta = (newconf[0] > 0) ? 2 * sf : 2 * sf + 1;
-      VectorType b(nv_);
-      for (int j = 0; j < nv_; ++j) {
-        b(j) = (j != sf) ? F_(beta, lt.Vi(0)(j)) : F_(beta, beta);
+      std::complex<double> ratio = 0.0;
+      for (int i = 0; i < nv_; ++i) {
+        if (i != sf) {
+          ratio += -lt.M(0).row(sf)(i) * F_(beta, lt.Vi(0)(i));
+        }
       }
-      std::complex<double> ratio = (-lt.M(0).row(sf) * b)(0);
       if (tc_size > 1) {
+        VectorType b(nv_);
         if (tc_size == 2) {
           sf = tochange[0];
           beta = (newconf[0] > 0) ? 2 * sf : 2 * sf + 1;
@@ -312,12 +314,9 @@ class PairProduct : public AbstractMachine {
           std::complex<double> c = 1.0 / bp(sf);
           VectorType temp2 = lt.M(0).row(tochange[1]);
           temp2(sf) *= (1.0 + c);
-          if (tochange[1] == tochange[0]) {
-            temp2 *= (1.0 + c);
-          }
-          VectorType temp = bp(tochange[1]) * lt.M(0).row(sf) -
-                            lt.M(0).row(sf)(tochange[1]) * bp.transpose();
-          temp2 = temp2 - c * temp;
+          temp2 = temp2 - c * (bp(tochange[1]) * lt.M(0).row(sf) -
+                               lt.M(0).row(sf)(tochange[1]) * bp.transpose())
+                                  .transpose();
           Eigen::VectorXi VV = lt.Vi(0);
           VV(sf) = beta;
 
@@ -328,6 +327,7 @@ class PairProduct : public AbstractMachine {
           }
           ratio *= (-temp2.transpose() * b)(0);
         } else {
+          VectorType b(nv_);
           LookupType lt_prime = lt;
           for (std::size_t s = 1; s < tochange.size(); s++) {
             std::vector<int> tochange_prime = {tochange[s - 1]};
@@ -355,7 +355,26 @@ class PairProduct : public AbstractMachine {
   VectorType DerLog(VisibleConstType v, const LookupType &lt) override {
     VectorType der(npar_);
     der.setZero();
-
+    // if (!use_singlet_) {
+    //   for (int i = 0; i < nv_; i++) {
+    //     for (int j = i + 1; j < nv_; j++) {
+    //       int k = ((4 * nv_ - lt.Vi(0)(i) - 1) * lt.Vi(0)(i)) / 2 +
+    //               (lt.Vi(0)(j) - 1 - lt.Vi(0)(i));
+    //       der(k) = 0.5 * (-lt.M(0)(i, j) + lt.M(0)(j, i));
+    //     }
+    //   }
+    // } else {
+    //   for (int i = 0; i < nv_; i++) {
+    //     for (int j = i + 1; j < nv_; j++) {
+    //       if (!((lt.Vi(0)(i) - lt.Vi(0)(j)) % 2 == 0)) {
+    //         int k =
+    //             ((nv_ + (2 * nv_ - lt.Vi(0)(i) + 1) / 2) * lt.Vi(0)(i) / 2) +
+    //             (lt.Vi(0)(j) - lt.Vi(0)(i)) / 2;
+    //         der(k) = 0.5 * (-lt.M(0)(i, j) + lt.M(0)(j, i));
+    //       }
+    //     }
+    //   }
+    // }
     for (int i = 0; i < nv_; i++) {
       for (int j = i + 1; j < nv_; j++) {
         int k = ((4 * nv_ - lt.Vi(0)(i) - 1) * lt.Vi(0)(i)) / 2 +
@@ -372,6 +391,27 @@ class PairProduct : public AbstractMachine {
 
     LookupType lt;
     InitLookup(v, lt);
+
+    // if (!use_singlet_) {
+    //   for (int i = 0; i < nv_; i++) {
+    //     for (int j = i + 1; j < nv_; j++) {
+    //       int k = ((4 * nv_ - lt.Vi(0)(i) - 1) * lt.Vi(0)(i)) / 2 +
+    //               (lt.Vi(0)(j) - 1 - lt.Vi(0)(i));
+    //       der(k) = 0.5 * (-lt.M(0)(i, j) + lt.M(0)(j, i));
+    //     }
+    //   }
+    // } else {
+    //   for (int i = 0; i < nv_; i++) {
+    //     for (int j = i + 1; j < nv_; j++) {
+    //       if (!((lt.Vi(0)(i) - lt.Vi(0)(j)) % 2 == 0)) {
+    //         int k =
+    //             ((nv_ + (2 * nv_ - lt.Vi(0)(i) + 1) / 2) * lt.Vi(0)(i) / 2) +
+    //             (lt.Vi(0)(j) - lt.Vi(0)(i)) / 2;
+    //         der(k) = 0.5 * (-lt.M(0)(i, j) + lt.M(0)(j, i));
+    //       }
+    //     }
+    //   }
+    // }
 
     for (int i = 0; i < nv_; i++) {
       for (int j = i + 1; j < nv_; j++) {
