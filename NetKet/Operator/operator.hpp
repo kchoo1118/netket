@@ -26,5 +26,7 @@
 #include "heisenberg.hpp"
 #include "ising.hpp"
 #include "local_operator.hpp"
+#include "qubit_operator.hpp"
+#include "qubit_pm_operator.hpp"
 
 #endif

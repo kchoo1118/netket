@@ -38,10 +38,22 @@ class Qubit : public AbstractHilbert {
 
   int nqubits_;
 
+  double totalUp_;
+  bool constraintUp_;
+
  public:
   explicit Qubit(const AbstractGraph &graph) : graph_(graph) {
     const int nqubits = graph.Size();
     Init(nqubits);
+
+    constraintUp_ = false;
+  }
+
+  explicit Qubit(const AbstractGraph &graph, int totalUp) : graph_(graph) {
+    const int nqubits = graph.Size();
+    Init(nqubits);
+
+    SetConstraint(totalUp);
   }
 
   void Init(int nqubits) {
@@ -51,6 +63,17 @@ class Qubit : public AbstractHilbert {
 
     local_[0] = 0;
     local_[1] = 1;
+  }
+
+  void SetConstraint(int totalUp) {
+    constraintUp_ = true;
+    totalUp_ = totalUp;
+    int m = totalUp;
+    if (m > nqubits_ || m < 0) {
+      throw InvalidInputError(
+          "Cannot fix the total number of 1 bits: |M| cannot "
+          "exceed Nqubits.");
+    }
   }
 
   bool IsDiscrete() const override { return true; }
@@ -65,11 +88,29 @@ class Qubit : public AbstractHilbert {
                   netket::default_random_engine &rgen) const override {
     std::uniform_int_distribution<int> distribution(0, 1);
 
-    assert(state.size() == nqubits_);
+    if (!constraintUp_) {
+      assert(state.size() == nqubits_);
 
-    // unconstrained random
-    for (int i = 0; i < state.size(); i++) {
-      state(i) = distribution(rgen);
+      // unconstrained random
+      for (int i = 0; i < state.size(); i++) {
+        state(i) = distribution(rgen);
+      }
+    } else {
+      using std::begin;
+      using std::end;
+      // Magnetisation as a count
+      int m = totalUp_;
+      if (m > nqubits_ || m < 0) {
+        throw InvalidInputError(
+            "Cannot fix the total number of 1 bits: |M| cannot "
+            "exceed Nqubits.");
+      }
+      int nup = m;
+      int ndown = nqubits_ - m;
+      std::fill_n(state.data(), nup, 1.0);
+      std::fill_n(state.data() + nup, ndown, 0.0);
+      std::shuffle(state.data(), state.data() + nqubits_, rgen);
+      return;
     }
   }
 
