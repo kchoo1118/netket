@@ -54,9 +54,16 @@ class PairProductSymm : public AbstractMachine {
   Eigen::MatrixXd DerMatSymm_;
   Eigen::MatrixXi Ftemp_;
 
+  double c_;
+
  public:
   explicit PairProductSymm(const AbstractHilbert &hilbert)
       : hilbert_(hilbert), graph_(hilbert.GetGraph()), nv_(hilbert.Size()) {
+    if (hilbert_.LocalSize() != 2) {
+      throw InvalidInputError(
+          "PairProduct wf only works for hilbert spaces with local size 2");
+    }
+    c_ = (hilbert_.LocalStates()[0] + hilbert_.LocalStates()[1]) / 2;
     Init();
   }
 
@@ -203,7 +210,7 @@ class PairProductSymm : public AbstractMachine {
       lt.AddVector_i(1);
     }
     for (int i = 0; i < nv_; ++i) {
-      lt.Vi(0)(i) = (v(i) > 0) ? 2 * i : 2 * i + 1;
+      lt.Vi(0)(i) = (v(i) > c_) ? 2 * i : 2 * i + 1;
     }
     lt.Vi(1)(0) = 0;
     MatrixType X;
@@ -219,7 +226,7 @@ class PairProductSymm : public AbstractMachine {
       if (tochange.size() != 0) {
         for (std::size_t s = 0; s < tochange.size(); s++) {
           const int sf = tochange[s];
-          int beta = (newconf[s] > 0) ? 2 * sf : 2 * sf + 1;
+          int beta = (newconf[s] > c_) ? 2 * sf : 2 * sf + 1;
           VectorType b(nv_);
           for (int j = 0; j < nv_; ++j) {
             b(j) = (j != sf) ? F_(beta, lt.Vi(0)(j)) : F_(beta, beta);
@@ -270,7 +277,7 @@ class PairProductSymm : public AbstractMachine {
   // Value of the logarithm of the wave-function
   Complex LogVal(VisibleConstType v) override {
     for (int i = 0; i < nv_; ++i) {
-      rlist_(i) = (v(i) > 0) ? 2 * i : 2 * i + 1;
+      rlist_(i) = (v(i) > c_) ? 2 * i : 2 * i + 1;
     }
 
     std::complex<double> pfaffian;
@@ -282,7 +289,7 @@ class PairProductSymm : public AbstractMachine {
   // using pre-computed look-up tables for efficiency
   Complex LogVal(VisibleConstType v, const LookupType & /*lt*/) override {
     for (int i = 0; i < nv_; ++i) {
-      rlist_(i) = (v(i) > 0) ? 2 * i : 2 * i + 1;
+      rlist_(i) = (v(i) > c_) ? 2 * i : 2 * i + 1;
     }
 
     std::complex<double> pfaffian;
@@ -323,7 +330,7 @@ class PairProductSymm : public AbstractMachine {
       int tc_size = tochange[k].size();
       if (tc_size != 0) {
         int sf = tochange[k][0];
-        int beta = (newconf[k][0] > 0) ? 2 * sf : 2 * sf + 1;
+        int beta = (newconf[k][0] > c_) ? 2 * sf : 2 * sf + 1;
         std::complex<double> ratio = 0.0;
         for (int i = 0; i < nv_; ++i) {
           if (i != sf) {
@@ -334,7 +341,7 @@ class PairProductSymm : public AbstractMachine {
           VectorType b(nv_);
           if (tc_size == 2) {
             sf = tochange[k][0];
-            beta = (newconf[k][0] > 0) ? 2 * sf : 2 * sf + 1;
+            beta = (newconf[k][0] > c_) ? 2 * sf : 2 * sf + 1;
             for (int j = 0; j < nv_; ++j) {
               b(j) = (j != sf) ? F_(beta, lt.Vi(0)(j)) : F_(beta, beta);
             }
@@ -351,7 +358,7 @@ class PairProductSymm : public AbstractMachine {
             VV(sf) = beta;
 
             sf = tochange[k][1];
-            beta = (newconf[k][1] > 0) ? 2 * sf : 2 * sf + 1;
+            beta = (newconf[k][1] > c_) ? 2 * sf : 2 * sf + 1;
             for (int j = 0; j < nv_; ++j) {
               b(j) = (j != sf) ? F_(beta, VV(j)) : F_(beta, beta);
             }
@@ -364,7 +371,7 @@ class PairProductSymm : public AbstractMachine {
               UpdateLookup(v, tochange_prime, newconf_prime, lt_prime);
 
               sf = tochange[k][s];
-              beta = (newconf[k][s] > 0) ? 2 * sf : 2 * sf + 1;
+              beta = (newconf[k][s] > c_) ? 2 * sf : 2 * sf + 1;
               for (int j = 0; j < nv_; ++j) {
                 b(j) = (j != sf) ? F_(beta, lt_prime.Vi(0)(j)) : F_(beta, beta);
               }
@@ -387,7 +394,7 @@ class PairProductSymm : public AbstractMachine {
     int tc_size = tochange.size();
     if (tc_size != 0) {
       int sf = tochange[0];
-      int beta = (newconf[0] > 0) ? 2 * sf : 2 * sf + 1;
+      int beta = (newconf[0] > c_) ? 2 * sf : 2 * sf + 1;
       std::complex<double> ratio = 0.0;
       for (int i = 0; i < nv_; ++i) {
         if (i != sf) {
@@ -398,7 +405,7 @@ class PairProductSymm : public AbstractMachine {
         VectorType b(nv_);
         if (tc_size == 2) {
           sf = tochange[0];
-          beta = (newconf[0] > 0) ? 2 * sf : 2 * sf + 1;
+          beta = (newconf[0] > c_) ? 2 * sf : 2 * sf + 1;
           for (int j = 0; j < nv_; ++j) {
             b(j) = (j != sf) ? F_(beta, lt.Vi(0)(j)) : F_(beta, beta);
           }
@@ -414,7 +421,7 @@ class PairProductSymm : public AbstractMachine {
           VV(sf) = beta;
 
           sf = tochange[1];
-          beta = (newconf[1] > 0) ? 2 * sf : 2 * sf + 1;
+          beta = (newconf[1] > c_) ? 2 * sf : 2 * sf + 1;
           for (int j = 0; j < nv_; ++j) {
             b(j) = (j != sf) ? F_(beta, VV(j)) : F_(beta, beta);
           }
@@ -427,7 +434,7 @@ class PairProductSymm : public AbstractMachine {
             UpdateLookup(v, tochange_prime, newconf_prime, lt_prime);
 
             sf = tochange[s];
-            beta = (newconf[s] > 0) ? 2 * sf : 2 * sf + 1;
+            beta = (newconf[s] > c_) ? 2 * sf : 2 * sf + 1;
             for (int j = 0; j < nv_; ++j) {
               b(j) = (j != sf) ? F_(beta, lt_prime.Vi(0)(j)) : F_(beta, beta);
             }
