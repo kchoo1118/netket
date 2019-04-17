@@ -434,9 +434,33 @@ class PairProduct : public AbstractMachine {
     return hilbert_;
   }
 
-  void to_json(json &j) const override {}
+  void to_json(json &j) const override {
+    j["Name"] = "PairProduct";
+    j["Nvisible"] = nv_;
+    j["F"] = F_;
+  }
 
-  void from_json(const json &pars) override {}
+  void from_json(const json &pars) override {
+    if (pars.at("Name") != "PairProduct") {
+      throw InvalidInputError(
+          "Error while constructing PairProduct from Json input");
+    }
+
+    if (FieldExists(pars, "Nvisible")) {
+      nv_ = pars["Nvisible"];
+    }
+    if (nv_ != hilbert_.Size()) {
+      throw InvalidInputError(
+          "Number of visible units is incompatible with given "
+          "Hilbert space");
+    }
+
+    Init();
+
+    if (FieldExists(pars, "F")) {
+      F_ = pars["F"];
+    }
+  }
 };
 
 }  // namespace netket
