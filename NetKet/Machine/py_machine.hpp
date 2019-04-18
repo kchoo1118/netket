@@ -33,6 +33,8 @@
 #include "py_pair_product_symm.hpp"
 #include "py_rbm_multival.hpp"
 #include "py_rbm_spin.hpp"
+#include "py_rbm_spin_phase.hpp"
+#include "py_rbm_spin_real.hpp"
 #include "py_rbm_spin_symm.hpp"
 
 namespace py = pybind11;
@@ -108,6 +110,10 @@ void AddMachineModule(py::module &m) {
       .def_property_readonly(
           "hilbert", &AbstractMachine::GetHilbert,
           R"EOF(netket.hilbert.Hilbert: The hilbert space object of the system.)EOF")
+      .def_property_readonly(
+          "is_holomorphic", &AbstractMachine::IsHolomorphic,
+          R"EOF(bool: Whether the given wave-function is a holomorphic function of
+            its parameters )EOF")
       .def("save",
            [](const AbstractMachine &a, std::string filename) {
              json j;
@@ -146,6 +152,8 @@ void AddMachineModule(py::module &m) {
   AddRbmMultival(subm);
   AddPairProduct(subm);
   AddPairProductSymm(subm);
+  AddRbmSpinReal(subm);
+  AddRbmSpinPhase(subm);
   AddJastrow(subm);
   AddJastrowSymm(subm);
   AddMpsPeriodic(subm);

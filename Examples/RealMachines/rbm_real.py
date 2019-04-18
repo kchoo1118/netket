@@ -12,39 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import netket as nk
-from load_data import load
 
+# 1D Lattice
+g = nk.graph.Hypercube(length=20, n_dim=1, pbc=True)
 
-path_to_samples = 'ising1d_train_samples.txt'
-path_to_bases = 'ising1d_train_bases.txt'
+# Hilbert space of spins on the graph
+hi = nk.hilbert.Spin(s=0.5, graph=g)
 
-# Load the data
-hi, rotations, training_samples, training_bases, ha = load(
-    path_to_samples, path_to_bases)
+# Ising spin hamiltonian
+ha = nk.operator.Ising(h=1.0, hilbert=hi)
 
-# Machine
-ma = nk.machine.RbmSpinPhase(hilbert=hi, alpha=1)
+# RBM Spin Machine
+ma = nk.machine.RbmSpinReal(alpha=1, hilbert=hi)
 ma.init_random_parameters(seed=1234, sigma=0.01)
 
-# Sampler
+# Metropolis Local Sampling
 sa = nk.sampler.MetropolisLocal(machine=ma)
 
 # Optimizer
-op = nk.optimizer.AdaDelta()
+op = nk.optimizer.Sgd(learning_rate=0.1)
 
-# Quantum State Reconstruction
-qst = nk.unsupervised.Qsr(
+# Stochastic reconfiguration
+gs = nk.variational.Vmc(
+    hamiltonian=ha,
     sampler=sa,
     optimizer=op,
-    batch_size=1000,
     n_samples=1000,
-    rotations=rotations,
-    samples=training_samples,
-    bases=training_bases,
-    method='Gd')
+    diag_shift=0.1,
+    method='Sr')
 
-qst.add_observable(ha, "Energy")
-
-qst.run(n_iter=10000, output_prefix="output")
+gs.run(output_prefix='test', n_iter=300)

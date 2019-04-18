@@ -29,5 +29,7 @@
 #include "pair_product_symm.hpp"
 #include "rbm_multival.hpp"
 #include "rbm_spin.hpp"
+#include "rbm_spin_phase.hpp"
+#include "rbm_spin_real.hpp"
 #include "rbm_spin_symm.hpp"
 #endif

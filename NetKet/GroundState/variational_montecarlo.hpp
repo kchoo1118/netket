@@ -23,19 +23,18 @@
 #include <vector>
 
 #include <Eigen/Dense>
-#include <Eigen/IterativeLinearSolvers>
 #include <nonstd/optional.hpp>
 
 #include "Machine/machine.hpp"
 #include "Operator/abstract_operator.hpp"
 #include "Optimizer/optimizer.hpp"
+#include "Optimizer/stochastic_reconfiguration.hpp"
 #include "Output/json_output_writer.hpp"
 #include "Sampler/abstract_sampler.hpp"
 #include "Stats/stats.hpp"
 #include "Utils/parallel_utils.hpp"
 #include "Utils/random_utils.hpp"
 #include "common_types.hpp"
-#include "matrix_replacement.hpp"
 
 namespace netket {
 
@@ -64,24 +63,17 @@ class VariationalMonteCarlo {
   Eigen::MatrixXd vsamp_;
 
   Eigen::VectorXcd grad_;
-  Eigen::VectorXcd gradprev_;
-
-  double sr_diag_shift_;
-  bool sr_rescale_shift_;
-  bool use_iterative_;
 
   int totalnodes_;
   int mynode_;
 
   AbstractOptimizer &opt_;
+  SR sr_;
+  bool dosr_;
 
   std::vector<AbstractOperator *> obs_;
   std::vector<std::string> obsnames_;
   ObsManager obsmanager_;
-
-  bool dosr_;
-
-  bool use_cholesky_;
 
   int nsamples_;
   int nsamples_node_;
@@ -91,6 +83,9 @@ class VariationalMonteCarlo {
   Complex elocmean_;
   double elocvar_;
   int npar_;
+
+  // whether the wave-function is analytical or not
+  bool is_holomorphic_;
 
  public:
   class Iterator {
@@ -142,28 +137,31 @@ class VariationalMonteCarlo {
                         int nsamples, int discarded_samples = -1,
                         int discarded_samples_on_init = 0,
                         const std::string &method = "Sr",
-                        double diag_shift = 0.01, bool rescale_shift = false,
-                        bool use_iterative = false, bool use_cholesky = true)
+                        double diag_shift = 0.01, bool use_iterative = false,
+                        bool use_cholesky = true)
       : ham_(hamiltonian),
         sampler_(sampler),
         psi_(sampler.GetMachine()),
         opt_(optimizer),
         elocvar_(0.) {
     Init(nsamples, discarded_samples, discarded_samples_on_init, method,
-         diag_shift, rescale_shift, use_iterative, use_cholesky);
+         diag_shift, use_iterative, use_cholesky);
   }
 
   void Init(int nsamples, int discarded_samples, int discarded_samples_on_init,
-            const std::string &method, double diagshift, bool rescale_shift,
-            bool use_iterative, bool use_cholesky) {
+            const std::string &method, double diag_shift, bool use_iterative,
+            bool use_cholesky) {
     npar_ = psi_.Npar();
+    is_holomorphic_ = psi_.IsHolomorphic();
 
-    opt_.Init(psi_.GetParameters());
+    if (is_holomorphic_) {
+      opt_.Init(Eigen::VectorXcd(npar_));
+    } else {
+      opt_.Init(Eigen::VectorXd(npar_));
+    }
 
     grad_.resize(npar_);
     Okmean_.resize(npar_);
-
-    setSrParameters();
 
     MPI_Comm_size(MPI_COMM_WORLD, &totalnodes_);
     MPI_Comm_rank(MPI_COMM_WORLD, &mynode_);
@@ -182,23 +180,9 @@ class VariationalMonteCarlo {
 
     if (method == "Gd") {
       dosr_ = false;
-    } else {
-      setSrParameters(diagshift, rescale_shift, use_iterative, use_cholesky);
-    }
-
-    if (dosr_) {
-      InfoMessage() << "Using the Stochastic reconfiguration method"
-                    << std::endl;
-
-      if (use_iterative_) {
-        InfoMessage() << "With iterative solver" << std::endl;
-      } else {
-        if (use_cholesky_) {
-          InfoMessage() << "Using Cholesky decomposition" << std::endl;
-        }
-      }
-    } else {
       InfoMessage() << "Using a gradient-descent based method" << std::endl;
+    } else {
+      setSrParameters(diag_shift, use_iterative, use_cholesky);
     }
 
     InfoMessage() << "Variational Monte Carlo running on " << totalnodes_
@@ -284,7 +268,7 @@ class VariationalMonteCarlo {
       obsmanager_.Push("EnergyVariance", std::norm(elocs_(i)));
     }
 
-    grad_ = 2. * (Ok_.adjoint() * elocs_);
+    grad_ = (Ok_.adjoint() * elocs_);
 
     // Summing the gradient over the nodes
     SumOnNodes(grad_);
@@ -354,6 +338,7 @@ class VariationalMonteCarlo {
       writer.emplace(output_prefix + ".log", output_prefix + ".wf",
                      save_params_every);
     }
+    opt_.Reset();
 
     for (const auto step : Iterate(n_iter, step_size)) {
       ComputeObservables();
@@ -376,89 +361,34 @@ class VariationalMonteCarlo {
   void UpdateParameters() {
     auto pars = psi_.GetParameters();
 
+    Eigen::VectorXcd deltap(npar_);
+
     if (dosr_) {
-      const int nsamp = vsamp_.rows();
-
-      Eigen::VectorXcd b = Ok_.adjoint() * elocs_;
-      SumOnNodes(b);
-      b /= double(nsamp * totalnodes_);
-
-      if (!use_iterative_) {
-        // Explicit construction of the S matrix
-        Eigen::MatrixXcd S = Ok_.adjoint() * Ok_;
-        SumOnNodes(S);
-        S /= double(nsamp * totalnodes_);
-
-        // Adding diagonal shift
-        S += Eigen::MatrixXd::Identity(pars.size(), pars.size()) *
-             sr_diag_shift_;
-
-        Eigen::VectorXcd deltaP;
-        if (use_cholesky_ == false) {
-          Eigen::FullPivHouseholderQR<Eigen::MatrixXcd> qr(S.rows(), S.cols());
-          qr.setThreshold(1.0e-6);
-          qr.compute(S);
-          deltaP = qr.solve(b);
-        } else {
-          Eigen::LLT<Eigen::MatrixXcd> llt(S.rows());
-          llt.compute(S);
-          deltaP = llt.solve(b);
-        }
-        // Eigen::VectorXcd deltaP=S.jacobiSvd(ComputeThinU |
-        // ComputeThinV).solve(b);
-
-        assert(deltaP.size() == grad_.size());
-        grad_ = deltaP;
-
-        if (sr_rescale_shift_) {
-          Complex nor = (deltaP.dot(S * deltaP));
-          grad_ /= std::sqrt(nor.real());
-        }
-
-      } else {
-        Eigen::ConjugateGradient<MatrixReplacement, Eigen::Lower | Eigen::Upper,
-                                 Eigen::IdentityPreconditioner>
-            it_solver;
-        // Eigen::GMRES<MatrixReplacement, Eigen::IdentityPreconditioner>
-        // it_solver;
-        it_solver.setTolerance(1.0e-3);
-        MatrixReplacement S;
-        S.attachMatrix(Ok_);
-        S.setShift(sr_diag_shift_);
-        S.setScale(1. / double(nsamp * totalnodes_));
-
-        it_solver.compute(S);
-        auto deltaP = it_solver.solve(b);
-
-        grad_ = deltaP;
-        if (sr_rescale_shift_) {
-          auto nor = deltaP.dot(S * deltaP);
-          grad_ /= std::sqrt(nor.real());
-        }
-
-        // if(mynode_==0){
-        //   std::cerr<<it_solver.iterations()<<"
-        //   "<<it_solver.error()<<std::endl;
-        // }
-        MPI_Barrier(MPI_COMM_WORLD);
-      }
+      sr_.ComputeUpdate(Ok_, grad_, deltap, is_holomorphic_);
+    } else {
+      deltap = grad_;
     }
 
-    opt_.Update(grad_, pars);
+    if (is_holomorphic_) {
+      opt_.Update(deltap, pars);
+    } else {
+      Eigen::VectorXd deltap_real = deltap.real();
+      Eigen::VectorXd parst = pars.real();
+      opt_.Update(deltap, parst);
+      pars.real() = parst;
+    }
 
     SendToAll(pars);
 
     psi_.SetParameters(pars);
+
     MPI_Barrier(MPI_COMM_WORLD);
   }
 
-  void setSrParameters(double diagshift = 0.01, bool rescale_shift = false,
-                       bool use_iterative = false, bool use_cholesky = true) {
-    sr_diag_shift_ = diagshift;
-    sr_rescale_shift_ = rescale_shift;
-    use_iterative_ = use_iterative;
+  void setSrParameters(double diag_shift = 0.01, bool use_iterative = false,
+                       bool use_cholesky = true) {
     dosr_ = true;
-    use_cholesky_ = use_cholesky;
+    sr_.setParameters(diag_shift, use_iterative, use_cholesky);
   }
 
   AbstractMachine &GetMachine() { return psi_; }
