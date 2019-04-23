@@ -30,6 +30,7 @@
 #include "py_jastrow_symm.hpp"
 #include "py_mps_periodic.hpp"
 #include "py_pair_product.hpp"
+#include "py_pair_product_singlet.hpp"
 #include "py_pair_product_symm.hpp"
 #include "py_rbm_multival.hpp"
 #include "py_rbm_spin.hpp"
@@ -152,6 +153,7 @@ void AddMachineModule(py::module &m) {
   AddRbmMultival(subm);
   AddPairProduct(subm);
   AddPairProductSymm(subm);
+  AddPairProductSinglet(subm);
   AddRbmSpinReal(subm);
   AddRbmSpinPhase(subm);
   AddJastrow(subm);

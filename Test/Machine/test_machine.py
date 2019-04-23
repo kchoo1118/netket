@@ -13,74 +13,76 @@ machines = {}
 g = nk.graph.Hypercube(length=4, n_dim=1)
 
 # Hilbert space of spins from given graph
-hi = nk.hilbert.Spin(s=0.5, graph=g)
+hi = nk.hilbert.Spin(s=0.5, total_sz = 0, graph=g)
 
-machines["PairProduct 1d Hypercube spin"] = nk.machine.PairProduct(hilbert=hi)
+machines["PairProductSinglet 1d Hypercube spin"] = nk.machine.PairProductSinglet(hilbert=hi)
 
-machines["PairProductSymm 1d Hypercube spin"] = nk.machine.PairProductSymm(hilbert=hi)
-
-machines["RbmSpin 1d Hypercube spin"] = nk.machine.RbmSpin(
-    hilbert=hi, alpha=1)
-
-machines["RbmSpinSymm 1d Hypercube spin"] = nk.machine.RbmSpinSymm(
-    hilbert=hi, alpha=2)
-
-machines["Real RBM"] = nk.machine.RbmSpinReal(hilbert=hi, alpha=1)
-
-machines["Phase RBM"] = nk.machine.RbmSpinPhase(hilbert=hi, alpha=2)
-
-machines["Jastrow 1d Hypercube spin"] = nk.machine.Jastrow(hilbert=hi)
-
-hi = nk.hilbert.Spin(s=0.5, graph=g, total_sz=0)
-machines["Jastrow 1d Hypercube spin"] = nk.machine.JastrowSymm(hilbert=hi)
-
-
-# Layers
-layers = (
-    nk.layer.FullyConnected(
-        input_size=g.n_sites,
-        output_size=40),
-    nk.layer.Lncosh(input_size=40),
-)
-
-# FFNN Machine
-machines["FFFN 1d Hypercube spin FullyConnected"] = nk.machine.FFNN(hi, layers)
-
-layers = (
-    nk.layer.ConvolutionalHypercube(
-        length=4,
-        n_dim=1,
-        input_channels=1,
-        output_channels=2,
-        stride=1,
-        kernel_length=2,
-        use_bias=True),
-    nk.layer.Lncosh(
-        input_size=8),
-)
-
-# FFNN Machine
-machines["FFFN 1d Hypercube spin Convolutional Hypercube"] = nk.machine.FFNN(
-    hi, layers)
-
-machines["MPS Diagonal 1d spin"] = nk.machine.MPSPeriodicDiagonal(
-    hi, bond_dim=3)
-machines["MPS 1d spin"] = nk.machine.MPSPeriodic(hi, bond_dim=3)
-
-# BOSONS
-hi = nk.hilbert.Boson(graph=g, n_max=3)
-machines["RbmSpin 1d Hypercube boson"] = nk.machine.RbmSpin(
-    hilbert=hi, alpha=1)
-
-machines["RbmSpinSymm 1d Hypercube boson"] = nk.machine.RbmSpinSymm(
-    hilbert=hi, alpha=2)
-machines["RbmMultiVal 1d Hypercube boson"] = nk.machine.RbmMultiVal(
-    hilbert=hi, n_hidden=10)
-machines["Jastrow 1d Hypercube boson"] = nk.machine.Jastrow(hilbert=hi)
-
-machines["JastrowSymm 1d Hypercube boson"] = nk.machine.JastrowSymm(
-    hilbert=hi)
-machines["MPS 1d boson"] = nk.machine.MPSPeriodic(hi, bond_dim=4)
+# machines["PairProduct 1d Hypercube spin"] = nk.machine.PairProduct(hilbert=hi)
+#
+# machines["PairProductSymm 1d Hypercube spin"] = nk.machine.PairProductSymm(hilbert=hi)
+#
+# machines["RbmSpin 1d Hypercube spin"] = nk.machine.RbmSpin(
+#     hilbert=hi, alpha=1)
+#
+# machines["RbmSpinSymm 1d Hypercube spin"] = nk.machine.RbmSpinSymm(
+#     hilbert=hi, alpha=2)
+#
+# machines["Real RBM"] = nk.machine.RbmSpinReal(hilbert=hi, alpha=1)
+#
+# machines["Phase RBM"] = nk.machine.RbmSpinPhase(hilbert=hi, alpha=2)
+#
+# machines["Jastrow 1d Hypercube spin"] = nk.machine.Jastrow(hilbert=hi)
+#
+# hi = nk.hilbert.Spin(s=0.5, graph=g, total_sz=0)
+# machines["Jastrow 1d Hypercube spin"] = nk.machine.JastrowSymm(hilbert=hi)
+#
+#
+# # Layers
+# layers = (
+#     nk.layer.FullyConnected(
+#         input_size=g.n_sites,
+#         output_size=40),
+#     nk.layer.Lncosh(input_size=40),
+# )
+#
+# # FFNN Machine
+# machines["FFFN 1d Hypercube spin FullyConnected"] = nk.machine.FFNN(hi, layers)
+#
+# layers = (
+#     nk.layer.ConvolutionalHypercube(
+#         length=4,
+#         n_dim=1,
+#         input_channels=1,
+#         output_channels=2,
+#         stride=1,
+#         kernel_length=2,
+#         use_bias=True),
+#     nk.layer.Lncosh(
+#         input_size=8),
+# )
+#
+# # FFNN Machine
+# machines["FFFN 1d Hypercube spin Convolutional Hypercube"] = nk.machine.FFNN(
+#     hi, layers)
+#
+# machines["MPS Diagonal 1d spin"] = nk.machine.MPSPeriodicDiagonal(
+#     hi, bond_dim=3)
+# machines["MPS 1d spin"] = nk.machine.MPSPeriodic(hi, bond_dim=3)
+#
+# # BOSONS
+# hi = nk.hilbert.Boson(graph=g, n_max=3)
+# machines["RbmSpin 1d Hypercube boson"] = nk.machine.RbmSpin(
+#     hilbert=hi, alpha=1)
+#
+# machines["RbmSpinSymm 1d Hypercube boson"] = nk.machine.RbmSpinSymm(
+#     hilbert=hi, alpha=2)
+# machines["RbmMultiVal 1d Hypercube boson"] = nk.machine.RbmMultiVal(
+#     hilbert=hi, n_hidden=10)
+# machines["Jastrow 1d Hypercube boson"] = nk.machine.Jastrow(hilbert=hi)
+#
+# machines["JastrowSymm 1d Hypercube boson"] = nk.machine.JastrowSymm(
+#     hilbert=hi)
+# machines["MPS 1d boson"] = nk.machine.MPSPeriodic(hi, bond_dim=4)
 
 
 np.random.seed(12346)
@@ -158,7 +160,8 @@ def test_log_derivative():
 
             grad = (nd.Gradient(log_val_f, step=1.0e-8))
             num_der_log = grad(randpars, machine, v)
-
+            print("der_log =", der_log)
+            print("num_der_log =", num_der_log)
             assert(np.max(np.real(der_log - num_der_log))
                    == approx(0., rel=1e-4, abs=1e-4))
             # The imaginary part is a bit more tricky, there might be an arbitrary phase shift
