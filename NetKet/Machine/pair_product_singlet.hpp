@@ -46,8 +46,6 @@ class PairProductSinglet : public AbstractMachine {
 
   double c_;
 
-  double phase_;
-
   std::size_t scalar_bytesize_;
 
  public:
@@ -63,7 +61,6 @@ class PairProductSinglet : public AbstractMachine {
     }
     c_ = (hilbert_.LocalStates()[0] + hilbert_.LocalStates()[1]) / 2;
     nv2_ = nv_ / 2;
-    phase_ = ((nv2_ * (nv2_ - 1)) % 2 == 0) ? 1.0 : -1.0;
     scalar_bytesize_ = sizeof(Complex);
     Init();
   }
