@@ -27,6 +27,7 @@
 #include "mps_periodic.hpp"
 #include "pair_product.hpp"
 #include "pair_product_singlet.hpp"
+#include "pair_product_singlet_symm.hpp"
 #include "pair_product_symm.hpp"
 #include "rbm_multival.hpp"
 #include "rbm_spin.hpp"
