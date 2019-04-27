@@ -38,6 +38,7 @@
 #include "py_rbm_spin_phase.hpp"
 #include "py_rbm_spin_real.hpp"
 #include "py_rbm_spin_symm.hpp"
+#include "py_sum_machine.hpp"
 
 namespace py = pybind11;
 
@@ -163,6 +164,7 @@ void AddMachineModule(py::module &m) {
   AddMpsPeriodic(subm);
   AddFFNN(subm);
   AddLayerModule(m);
+  AddSumMachine(subm);
 }
 
 }  // namespace netket

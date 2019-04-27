@@ -33,7 +33,18 @@ class Lookup {
   std::vector<Eigen::VectorXi> vi_;
 
  public:
+  std::vector<Lookup<T> *> lookups_;
   // Lookup<T> &operator=(const Lookup<T> lt) {}
+  // std::vector<Lookup<T> *> lookups_;
+  // int AddLookup() {
+  //   lookups_.push_back(netket::make_unique<AbstractLookup<T>>());
+  //   return lookups_.size() - 1;
+  // }
+
+  // AbstractLookup<T> &getLookup(std::size_t i) {
+  //   assert(i < lookups_.size() && i >= 0);
+  //   return *(lookups_[i].get());
+  // }
 
   int AddVV(int a) {
     vv_.push_back(std::vector<VectorType>(a));
@@ -101,6 +112,12 @@ class Lookup {
   const MatrixType &M(std::size_t i) const {
     assert(i < m_.size() && i >= 0);
     return m_[i];
+  }
+
+  ~Lookup() {
+    for (int i = 0; i < lookups_.size(); ++i) {
+      delete lookups_[i];
+    }
   }
 };
 }  // namespace netket
