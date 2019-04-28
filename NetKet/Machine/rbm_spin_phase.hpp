@@ -182,7 +182,7 @@ class RbmSpinPhase : public AbstractMachine {
     }
 
     RbmSpin::tanh(lt.V(0).real(), lnthetas1_);
-    RbmSpin::tanh(lt.V(0).real(), lnthetas2_);
+    RbmSpin::tanh(lt.V(1).real(), lnthetas2_);
 
     if (useb_) {
       for (int p = 0; p < nh_; p++) {
