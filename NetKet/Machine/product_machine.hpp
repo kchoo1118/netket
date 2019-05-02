@@ -83,7 +83,7 @@ class ProductMachine : public AbstractMachine {
     }
     ntrain_ = totrain_.size();
 
-    InfoMessage(buffer) << "# Sum Machine Initizialized with " << nmachine_
+    InfoMessage(buffer) << "# Product Machine Initizialized with " << nmachine_
                         << " Machines" << std::endl;
     InfoMessage(buffer) << "# Number of trainable machines = " << ntrain_
                         << std::endl;
