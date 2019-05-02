@@ -105,7 +105,11 @@ class PairProductSingletSymm : public AbstractMachine {
             std::cerr << "Error in PairProductSingletSymm" << std::endl;
             std::abort();
           }
-          Ftemp_(isymm, jsymm) = k;
+          if (isymm >= jsymm) {
+            Ftemp_(isymm, jsymm) = k;
+          } else {
+            Ftemp_(isymm, jsymm) = -k;
+          }
           // Ftemp_(jsymm, isymm) = k;
         }  // l
         k++;
@@ -301,48 +305,67 @@ class PairProductSingletSymm : public AbstractMachine {
   VectorType LogValDiff(
       VisibleConstType v, const std::vector<std::vector<int>> &tochange,
       const std::vector<std::vector<double>> &newconf) override {
-    Eigen::VectorXd vflip = v;
     const std::size_t nconn = tochange.size();
     VectorType logvaldiffs = VectorType::Zero(nconn);
 
-    LookupType lt;
-    InitLookup(v, lt);
+    // LookupType lt;
+    // InitLookup(v, lt);
+    //
+    // for (std::size_t k = 0; k < nconn; k++) {
+    //   Complex ratio;
+    //   if (tochange[k].size() == 2) {
+    //     LookupType lt_temp = lt;
+    //     // up Spin
+    //     if (newconf[k][0] < c_) {
+    //       int tc_i, tc_j;
+    //       GetIndices(tc_i, tc_j, tochange[k][0], tochange[k][1],
+    //       lt_temp.Vi(0)); VectorType b(nv2_); for (int j = 0; j < nv2_; ++j)
+    //       {
+    //         b(j) = F_(tochange[k][1], lt_temp.Vi(1)(j));
+    //       }
+    //       ratio = (b.transpose() * lt_temp.M(0).col(tc_i))(0);
+    //       ratio *= ((tc_i - tc_j) % 2 == 0) ? 1.0 : -1.0;
+    //       UpdateUp(tochange[k][0], tochange[k][1], lt_temp);
+    //       GetIndices(tc_i, tc_j, tochange[k][1], tochange[k][0],
+    //       lt_temp.Vi(1)); for (int j = 0; j < nv2_; ++j) {
+    //         b(j) = F_(lt_temp.Vi(0)(j), tochange[k][0]);
+    //       }
+    //       ratio *= (lt_temp.M(0).row(tc_i) * b)(0);
+    //       ratio *= ((tc_i - tc_j) % 2 == 0) ? 1.0 : -1.0;
+    //     } else {
+    //       int tc_i, tc_j;
+    //       GetIndices(tc_i, tc_j, tochange[k][1], tochange[k][0],
+    //       lt_temp.Vi(0)); VectorType b(nv2_); for (int j = 0; j < nv2_; ++j)
+    //       {
+    //         b(j) = F_(tochange[k][0], lt_temp.Vi(1)(j));
+    //       }
+    //       ratio = (b.transpose() * lt_temp.M(0).col(tc_i))(0);
+    //       ratio *= ((tc_i - tc_j) % 2 == 0) ? 1.0 : -1.0;
+    //       UpdateUp(tochange[k][1], tochange[k][0], lt_temp);
+    //       GetIndices(tc_i, tc_j, tochange[k][0], tochange[k][1],
+    //       lt_temp.Vi(1)); for (int j = 0; j < nv2_; ++j) {
+    //         b(j) = F_(lt_temp.Vi(0)(j), tochange[k][1]);
+    //       }
+    //       ratio *= (lt_temp.M(0).row(tc_i) * b)(0);
+    //       ratio *= ((tc_i - tc_j) % 2 == 0) ? 1.0 : -1.0;
+    //     }
+    //     logvaldiffs(k) = std::log(ratio);
+    //   }
+    // }
+    Eigen::VectorXd vflip = v;
+    std::complex<double> current_val = LogVal(v);
 
     for (std::size_t k = 0; k < nconn; k++) {
-      Complex ratio;
-      if (tochange[k].size() == 2) {
-        LookupType lt_temp = lt;
-        // up Spin
-        if (newconf[k][0] < c_) {
-          int tc_i, tc_j;
-          GetIndices(tc_i, tc_j, tochange[k][0], tochange[k][1], lt_temp.Vi(0));
-          VectorType b(nv2_);
-          for (int j = 0; j < nv2_; ++j) {
-            b(j) = F_(tochange[k][1], lt_temp.Vi(1)(j));
-          }
-          ratio = (b.transpose() * lt_temp.M(0).col(tc_i))(0);
-          UpdateUp(tochange[k][0], tochange[k][1], lt_temp);
-          GetIndices(tc_i, tc_j, tochange[k][1], tochange[k][0], lt_temp.Vi(1));
-          for (int j = 0; j < nv2_; ++j) {
-            b(j) = F_(lt_temp.Vi(0)(j), tochange[k][0]);
-          }
-          ratio *= (lt_temp.M(0).row(tc_i) * b)(0);
-        } else {
-          int tc_i, tc_j;
-          GetIndices(tc_i, tc_j, tochange[k][1], tochange[k][0], lt_temp.Vi(0));
-          VectorType b(nv2_);
-          for (int j = 0; j < nv2_; ++j) {
-            b(j) = F_(tochange[k][0], lt_temp.Vi(1)(j));
-          }
-          ratio = (b.transpose() * lt_temp.M(0).col(tc_i))(0);
-          UpdateUp(tochange[k][1], tochange[k][0], lt_temp);
-          GetIndices(tc_i, tc_j, tochange[k][0], tochange[k][1], lt_temp.Vi(1));
-          for (int j = 0; j < nv2_; ++j) {
-            b(j) = F_(lt_temp.Vi(0)(j), tochange[k][1]);
-          }
-          ratio *= (lt_temp.M(0).row(tc_i) * b)(0);
+      if (tochange[k].size() != 0) {
+        for (std::size_t s = 0; s < tochange[k].size(); s++) {
+          const int sf = tochange[k][s];
+          vflip(sf) = newconf[k][s];
         }
-        logvaldiffs(k) = std::log(ratio);
+        logvaldiffs(k) += LogVal(vflip) - current_val;
+        for (std::size_t s = 0; s < tochange[k].size(); s++) {
+          const int sf = tochange[k][s];
+          vflip(sf) = v(sf);
+        }
       }
     }
     return logvaldiffs;
@@ -354,59 +377,67 @@ class PairProductSingletSymm : public AbstractMachine {
   Complex LogValDiff(VisibleConstType v, const std::vector<int> &tochange,
                      const std::vector<double> &newconf,
                      const LookupType &lt) override {
-    Complex ratio;
-    if (tochange.size() == 2) {
-      LookupType lt_temp = lt;
-      // up Spin
-      if (newconf[0] < c_) {
-        int tc_i, tc_j;
-        GetIndices(tc_i, tc_j, tochange[0], tochange[1], lt_temp.Vi(0));
-        VectorType b(nv2_);
-        for (int j = 0; j < nv2_; ++j) {
-          b(j) = F_(tochange[1], lt_temp.Vi(1)(j));
-        }
-        ratio = (b.transpose() * lt_temp.M(0).col(tc_i))(0);
-
-        UpdateUp(tochange[0], tochange[1], lt_temp);
-        GetIndices(tc_i, tc_j, tochange[1], tochange[0], lt_temp.Vi(1));
-        for (int j = 0; j < nv2_; ++j) {
-          b(j) = F_(lt_temp.Vi(0)(j), tochange[0]);
-        }
-        ratio *= (lt_temp.M(0).row(tc_i) * b)(0);
-      } else {
-        int tc_i, tc_j;
-        GetIndices(tc_i, tc_j, tochange[1], tochange[0], lt_temp.Vi(0));
-        VectorType b(nv2_);
-        for (int j = 0; j < nv2_; ++j) {
-          b(j) = F_(tochange[0], lt_temp.Vi(1)(j));
-        }
-        ratio = (b.transpose() * lt_temp.M(0).col(tc_i))(0);
-        UpdateUp(tochange[1], tochange[0], lt_temp);
-        GetIndices(tc_i, tc_j, tochange[0], tochange[1], lt_temp.Vi(1));
-        for (int j = 0; j < nv2_; ++j) {
-          b(j) = F_(lt_temp.Vi(0)(j), tochange[1]);
-        }
-        ratio *= (lt_temp.M(0).row(tc_i) * b)(0);
-      }
-      return std::log(ratio);
-    } else {
-      Eigen::VectorXd vflip = v;
-      hilbert_.UpdateConf(vflip, tochange, newconf);
-      return LogVal(vflip) - LogVal(v);
-    }
+    // Complex ratio;
+    // if (tochange.size() == 2) {
+    //   LookupType lt_temp = lt;
+    //   // up Spin
+    //   if (newconf[0] < c_) {
+    //     int tc_i, tc_j;
+    //     GetIndices(tc_i, tc_j, tochange[0], tochange[1], lt_temp.Vi(0));
+    //     VectorType b(nv2_);
+    //     for (int j = 0; j < nv2_; ++j) {
+    //       b(j) = F_(tochange[1], lt_temp.Vi(1)(j));
+    //     }
+    //     ratio = (b.transpose() * lt_temp.M(0).col(tc_i))(0);
+    //     ratio *= ((tc_i - tc_j) % 2 == 0) ? 1.0 : -1.0;
+    //
+    //     UpdateUp(tochange[0], tochange[1], lt_temp);
+    //     GetIndices(tc_i, tc_j, tochange[1], tochange[0], lt_temp.Vi(1));
+    //     for (int j = 0; j < nv2_; ++j) {
+    //       b(j) = F_(lt_temp.Vi(0)(j), tochange[0]);
+    //     }
+    //     ratio *= (lt_temp.M(0).row(tc_i) * b)(0);
+    //     ratio *= ((tc_i - tc_j) % 2 == 0) ? 1.0 : -1.0;
+    //   } else {
+    //     int tc_i, tc_j;
+    //     GetIndices(tc_i, tc_j, tochange[1], tochange[0], lt_temp.Vi(0));
+    //     VectorType b(nv2_);
+    //     for (int j = 0; j < nv2_; ++j) {
+    //       b(j) = F_(tochange[0], lt_temp.Vi(1)(j));
+    //     }
+    //     ratio = (b.transpose() * lt_temp.M(0).col(tc_i))(0);
+    //     ratio *= ((tc_i - tc_j) % 2 == 0) ? 1.0 : -1.0;
+    //     UpdateUp(tochange[1], tochange[0], lt_temp);
+    //     GetIndices(tc_i, tc_j, tochange[0], tochange[1], lt_temp.Vi(1));
+    //     for (int j = 0; j < nv2_; ++j) {
+    //       b(j) = F_(lt_temp.Vi(0)(j), tochange[1]);
+    //     }
+    //     ratio *= (lt_temp.M(0).row(tc_i) * b)(0);
+    //     ratio *= ((tc_i - tc_j) % 2 == 0) ? 1.0 : -1.0;
+    //   }
+    //   return std::log(ratio);
+    // } else {
+    //   Eigen::VectorXd vflip = v;
+    //   hilbert_.UpdateConf(vflip, tochange, newconf);
+    //   return LogVal(vflip) - LogVal(v);
+    // }
+    Eigen::VectorXd vflip = v;
+    hilbert_.UpdateConf(vflip, tochange, newconf);
+    return LogVal(vflip) - LogVal(v);
   }
 
   VectorType DerLog(VisibleConstType v, const LookupType &lt) override {
-    VectorType der(nbarepar_);
-    der.setZero();
-
-    for (int i = 0; i < nv2_; i++) {
-      for (int j = 0; j < nv2_; j++) {
-        int k = lt.Vi(1)(j) * nv_ + lt.Vi(0)(i);
-        der(k) = lt.M(0)(j, i);
-      }
-    }
-    return DerMatSymm_ * der;
+    // VectorType der(nbarepar_);
+    // der.setZero();
+    //
+    // for (int i = 0; i < nv2_; i++) {
+    //   for (int j = 0; j < nv2_; j++) {
+    //     int k = lt.Vi(1)(j) * nv_ + lt.Vi(0)(i);
+    //     der(k) = lt.M(0)(j, i);
+    //   }
+    // }
+    // return DerMatSymm_ * der;
+    return DerLog(v);
   }
 
   VectorType DerLog(VisibleConstType v) override {
@@ -509,7 +540,7 @@ class PairProductSingletSymm : public AbstractMachine {
         if ((final < initial) && (new_ind == nv2_)) {
           new_ind = i;
         }
-      } else if ((final < locs(i)) && (new_ind = nv2_)) {
+      } else if ((final < locs(i)) && (new_ind == nv2_)) {
         new_ind = i;
       }
     }

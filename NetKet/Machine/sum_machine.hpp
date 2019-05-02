@@ -229,6 +229,15 @@ class SumMachine : public AbstractMachine {
   const AbstractHilbert &GetHilbert() const noexcept override {
     return hilbert_;
   }
+
+  bool IsHolomorphic() override {
+    for (auto i : totrain_) {
+      if (machines_[i]->IsHolomorphic()) {
+        return true;
+      }
+    }
+    return false;
+  }
 };  // namespace netket
 
 }  // namespace netket

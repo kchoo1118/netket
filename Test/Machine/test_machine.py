@@ -10,12 +10,12 @@ machines = {}
 
 # TESTS FOR SPIN HILBERT
 # Constructing a 1d lattice
-g = nk.graph.Hypercube(length=4, n_dim=1)
+g = nk.graph.Hypercube(length=8, n_dim=1)
 
 # Hilbert space of spins from given graph
 hi = nk.hilbert.Spin(s=0.5, total_sz = 0, graph=g)
 
-machines["PairProductSinglet 1d Hypercube spin"] = nk.machine.PairProductSinglet(hilbert=hi)
+machines["PairProductSinglet 1d Hypercube spin"] = nk.machine.PairProductSingletSymm(hilbert=hi)
 
 # machines["PairProduct 1d Hypercube spin"] = nk.machine.PairProduct(hilbert=hi)
 #
@@ -160,8 +160,6 @@ def test_log_derivative():
 
             grad = (nd.Gradient(log_val_f, step=1.0e-8))
             num_der_log = grad(randpars, machine, v)
-            print("der_log =", der_log)
-            print("num_der_log =", num_der_log)
             assert(np.max(np.real(der_log - num_der_log))
                    == approx(0., rel=1e-4, abs=1e-4))
             # The imaginary part is a bit more tricky, there might be an arbitrary phase shift
@@ -194,12 +192,14 @@ def test_log_val_diff():
 
             # random number of changes
             for i in range(100):
-                n_change = np.random.randint(low=0, high=hi.size)
                 # generate n_change unique sites to be changed
-                tochange.append(np.random.choice(
-                    hi.size, n_change, replace=False))
-                newconfs.append(np.random.choice(local_states, n_change))
+                tc = np.random.choice(hi.size, 2, replace=False)
+                if rstate[tc][0]!=rstate[tc][1]:
+                    newconfs.append(np.array([rstate[tc][1], rstate[tc][0]]))
+                    tochange.append(tc)
+                    break
 
+            print(len(tochange))
             ldiffs = machine.log_val_diff(rstate, tochange, newconfs)
             valzero = machine.log_val(rstate)
 
@@ -219,7 +219,7 @@ def test_log_val_diff():
 
                 hi.update_conf(rstatet, toc, newco)
                 ldiff_num = machine.log_val(rstatet) - valzero
-
+                print(ldiff_num, ldiff, np.max(np.exp(np.imag(ldiff_num - ldiff) * 1.0j)))
                 assert(np.max(np.real(ldiff_num - ldiff)) == approx(0.0))
                 # The imaginary part is a bit more tricky, there might be an arbitrary phase shift
                 assert(
