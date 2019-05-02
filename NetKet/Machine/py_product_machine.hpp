@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NETKET_PYSUMMACHINE_HPP
-#define NETKET_PYSUMMACHINE_HPP
+#ifndef NETKET_PYPRODMACHINE_HPP
+#define NETKET_PYPRODMMACHINE_HPP
 
 #include <mpi.h>
 #include <pybind11/complex.h>
@@ -23,22 +23,23 @@
 #include <pybind11/stl_bind.h>
 #include <complex>
 #include <vector>
-#include "ffnn.hpp"
+#include "product_machine.hpp"
 
 namespace py = pybind11;
 
 namespace netket {
 
-void AddSumMachine(py::module &subm) {
+void AddProductMachine(py::module &subm) {
   {
-    py::class_<SumMachine, AbstractMachine>(subm, "SumMachine", R"EOF(
-             A machine which is the sum (log sum) of other machines i.e.
+    py::class_<ProductMachine, AbstractMachine>(subm, "ProductMachine", R"EOF(
+             A machine which is the (log sum) of other machines i.e.
              it represents the product of wavefunctions.)EOF")
         .def(py::init([](AbstractHilbert const &hi, py::tuple tuple,
                          py::tuple tuple2) {
                auto machines = py::cast<std::vector<AbstractMachine *>>(tuple);
                auto trainable = py::cast<std::vector<bool>>(tuple2);
-               return SumMachine{hi, std::move(machines), std::move(trainable)};
+               return ProductMachine{hi, std::move(machines),
+                                     std::move(trainable)};
              }),
              py::keep_alive<1, 2>(), py::keep_alive<1, 3>(),
              py::keep_alive<1, 4>(), py::arg("hilbert"), py::arg("machines"),

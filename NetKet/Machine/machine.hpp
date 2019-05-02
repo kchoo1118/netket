@@ -29,10 +29,10 @@
 #include "pair_product_singlet.hpp"
 #include "pair_product_singlet_symm.hpp"
 #include "pair_product_symm.hpp"
+#include "product_machine.hpp"
 #include "rbm_multival.hpp"
 #include "rbm_spin.hpp"
 #include "rbm_spin_phase.hpp"
 #include "rbm_spin_real.hpp"
 #include "rbm_spin_symm.hpp"
-#include "sum_machine.hpp"
 #endif

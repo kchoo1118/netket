@@ -22,12 +22,12 @@
 #include "Utils/lookup.hpp"
 #include "machine.hpp"
 
-#ifndef NETKET_SUMMACHINE_HPP
-#define NETKET_SUMMACHINE_HPP
+#ifndef NETKET_PRODMACHINE_HPP
+#define NETKET_PRODMACHINE_HPP
 
 namespace netket {
 
-class SumMachine : public AbstractMachine {
+class ProductMachine : public AbstractMachine {
   const AbstractHilbert &hilbert_;
 
   std::vector<AbstractMachine *> machines_;  // Pointers to machines
@@ -41,9 +41,9 @@ class SumMachine : public AbstractMachine {
   std::vector<std::unique_ptr<LookupType>> lookup_;
 
  public:
-  explicit SumMachine(const AbstractHilbert &hilbert,
-                      std::vector<AbstractMachine *> machines,
-                      std::vector<bool> trainable)
+  explicit ProductMachine(const AbstractHilbert &hilbert,
+                          std::vector<AbstractMachine *> machines,
+                          std::vector<bool> trainable)
       : hilbert_(hilbert),
         machines_(std::move(machines)),
         trainable_(std::move(trainable)),

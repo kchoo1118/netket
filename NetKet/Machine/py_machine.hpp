@@ -33,12 +33,12 @@
 #include "py_pair_product_singlet.hpp"
 #include "py_pair_product_singlet_symm.hpp"
 #include "py_pair_product_symm.hpp"
+#include "py_product_machine.hpp"
 #include "py_rbm_multival.hpp"
 #include "py_rbm_spin.hpp"
 #include "py_rbm_spin_phase.hpp"
 #include "py_rbm_spin_real.hpp"
 #include "py_rbm_spin_symm.hpp"
-#include "py_sum_machine.hpp"
 
 namespace py = pybind11;
 
@@ -164,7 +164,7 @@ void AddMachineModule(py::module &m) {
   AddMpsPeriodic(subm);
   AddFFNN(subm);
   AddLayerModule(m);
-  AddSumMachine(subm);
+  AddProductMachine(subm);
 }
 
 }  // namespace netket
