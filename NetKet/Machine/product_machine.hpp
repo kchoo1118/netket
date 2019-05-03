@@ -98,7 +98,8 @@ class ProductMachine : public AbstractMachine {
       nmachine_ = machine_par.size();
     } else {
       throw InvalidInputError(
-          "Field (Machines) not defined for Machine (SumMachine) in initfile");
+          "Field (Machines) not defined for Machine (ProductMachine) in "
+          "initfile");
     }
 
     for (int i = 0; i < nmachine_; ++i) {
@@ -217,7 +218,7 @@ class ProductMachine : public AbstractMachine {
   }
 
   void to_json(json &j) const override {
-    j["Name"] = "SumMachine";
+    j["Name"] = "ProductMachine";
     j["Machines"] = {};
     for (int i = 0; i < nmachine_; ++i) {
       json jmachine;
