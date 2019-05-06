@@ -8,15 +8,22 @@ import os
 machines = {}
 
 
+
 # TESTS FOR SPIN HILBERT
 # Constructing a 1d lattice
-g = nk.graph.Hypercube(length=8, n_dim=1)
+g = nk.graph.Hypercube(length=4, n_dim=1)
 
 # Hilbert space of spins from given graph
 hi = nk.hilbert.Spin(s=0.5, total_sz = 0, graph=g)
 
-machines["PairProductSinglet 1d Hypercube spin"] = nk.machine.PairProductSingletSymm(hilbert=hi)
-
+# machines["PairProductSinglet 1d Hypercube spin"] = nk.machine.PairProductSingletSymm(hilbert=hi)
+summachines = (
+    nk.machine.RbmSpinSymm(hilbert=hi, alpha=1),
+    nk.machine.RbmSpinSymm(hilbert=hi, alpha=1)
+)
+trainable = (True,True)
+machines["Sum Machine"] = nk.machine.SumMachine(hilbert=hi, machines=summachines, trainable=trainable)
+machines["Sum Machine"].init_random_parameters(seed=1232, sigma=0.03)
 # machines["PairProduct 1d Hypercube spin"] = nk.machine.PairProduct(hilbert=hi)
 #
 # machines["PairProductSymm 1d Hypercube spin"] = nk.machine.PairProductSymm(hilbert=hi)
@@ -160,6 +167,7 @@ def test_log_derivative():
 
             grad = (nd.Gradient(log_val_f, step=1.0e-8))
             num_der_log = grad(randpars, machine, v)
+            print(der_log, num_der_log)
             assert(np.max(np.real(der_log - num_der_log))
                    == approx(0., rel=1e-4, abs=1e-4))
             # The imaginary part is a bit more tricky, there might be an arbitrary phase shift
@@ -199,7 +207,6 @@ def test_log_val_diff():
                     tochange.append(tc)
                     break
 
-            print(len(tochange))
             ldiffs = machine.log_val_diff(rstate, tochange, newconfs)
             valzero = machine.log_val(rstate)
 
@@ -219,7 +226,6 @@ def test_log_val_diff():
 
                 hi.update_conf(rstatet, toc, newco)
                 ldiff_num = machine.log_val(rstatet) - valzero
-                print(ldiff_num, ldiff, np.max(np.exp(np.imag(ldiff_num - ldiff) * 1.0j)))
                 assert(np.max(np.real(ldiff_num - ldiff)) == approx(0.0))
                 # The imaginary part is a bit more tricky, there might be an arbitrary phase shift
                 assert(

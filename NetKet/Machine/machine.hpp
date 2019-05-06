@@ -35,4 +35,5 @@
 #include "rbm_spin_phase.hpp"
 #include "rbm_spin_real.hpp"
 #include "rbm_spin_symm.hpp"
+#include "sum_machine.hpp"
 #endif
