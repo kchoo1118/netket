@@ -28,6 +28,7 @@
 #include "Utils/memory_utils.hpp"
 #include "Utils/parallel_utils.hpp"
 #include "abstract_sampler.hpp"
+#include "py_autoregressive_sampler.hpp"
 #include "py_custom_sampler.hpp"
 #include "py_custom_sampler_pt.hpp"
 #include "py_exact_sampler.hpp"
@@ -105,6 +106,7 @@ void AddSamplerModule(py::module &m) {
   AddExactSampler(subm);
   AddCustomSampler(subm);
   AddCustomSamplerPt(subm);
+  AddAutoregressiveSampler(subm);
 }
 
 }  // namespace netket

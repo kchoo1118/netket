@@ -22,6 +22,7 @@
 #include "Utils/memory_utils.hpp"
 #include "Utils/parallel_utils.hpp"
 #include "abstract_sampler.hpp"
+#include "autoregressive_sampler.hpp"
 #include "custom_sampler.hpp"
 #include "custom_sampler_pt.hpp"
 #include "exact_sampler.hpp"

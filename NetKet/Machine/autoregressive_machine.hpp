@@ -52,23 +52,38 @@ class AutoregressiveMachine : public AbstractMachine {
   bool usea_;
   bool useb_;
 
+  std::vector<double> local_;
+  int local_size_;
+  std::map<double, int> tolocal_;
+  std::discrete_distribution<int> dist_;
+  DistributedRandomEngine engine_;
+
  public:
   explicit AutoregressiveMachine(const AbstractHilbert &hilbert,
                                  int nhidden = 0, int alpha = 0,
                                  bool usea = true, bool useb = true)
-      : hilbert_(hilbert), nv_(hilbert.Size()), usea_(usea), useb_(useb) {
+      : hilbert_(hilbert),
+        nv_(hilbert.Size()),
+        usea_(usea),
+        useb_(useb),
+        local_(hilbert.LocalStates()),
+        local_size_(local_.size()) {
     nh_ = std::max(nhidden, alpha * nv_);
+
+    for (int i = 0; i < local_size_; ++i) {
+      tolocal_[local_[i] + 1e-4] = i;
+    }
 
     Init();
   }
 
   void Init() {
     W_.resize(nh_, nv_ - 1);
-    V_.resize(2 * nv_, nh_);
+    V_.resize(local_size_ * nv_, nh_);
     a_.resize(nh_);
-    b_.resize(2 * nv_);
+    b_.resize(local_size_ * nv_);
 
-    npar_ = (3 * nv_ - 1) * nh_;
+    npar_ = ((local_size_ + 1) * nv_ - 1) * nh_;
 
     if (usea_) {
       npar_ += nh_;
@@ -77,7 +92,7 @@ class AutoregressiveMachine : public AbstractMachine {
     }
 
     if (useb_) {
-      npar_ += 2 * nv_;
+      npar_ += local_size_ * nv_;
     } else {
       b_.setZero();
     }
@@ -86,6 +101,8 @@ class AutoregressiveMachine : public AbstractMachine {
                   << nv_ << " and nhidden = " << nh_ << std::endl;
     InfoMessage() << "Using visible bias = " << usea_ << std::endl;
     InfoMessage() << "Using hidden bias  = " << useb_ << std::endl;
+    InfoMessage() << "LocalSize  = " << local_size_ << std::endl;
+    InfoMessage() << "Num of parameters  = " << npar_ << std::endl;
   }
 
   int Nvisible() const override { return nv_; }
@@ -119,12 +136,12 @@ class AutoregressiveMachine : public AbstractMachine {
     }
 
     if (useb_) {
-      for (int p = 0; p < 2 * nv_; p++) {
+      for (int p = 0; p < local_size_ * nv_; p++) {
         pars(k) = b_(p);
         k++;
       }
     }
-    for (int i = 0; i < 2 * nv_; i++) {
+    for (int i = 0; i < local_size_ * nv_; i++) {
       for (int j = 0; j < nh_; j++) {
         pars(k) = V_(i, j);
         k++;
@@ -149,12 +166,12 @@ class AutoregressiveMachine : public AbstractMachine {
     }
 
     if (useb_) {
-      for (int p = 0; p < 2 * nv_; p++) {
+      for (int p = 0; p < local_size_ * nv_; p++) {
         b_(p) = pars(k);
         k++;
       }
     }
-    for (int i = 0; i < 2 * nv_; i++) {
+    for (int i = 0; i < local_size_ * nv_; i++) {
       for (int j = 0; j < nh_; j++) {
         V_(i, j) = pars(k);
         k++;
@@ -169,7 +186,6 @@ class AutoregressiveMachine : public AbstractMachine {
         lt.lookups_.push_back(new LookupType);
       }
     }
-
     if (lt.lookups_[0]->VectorSize() == 0) {
       for (int i = 0; i < nv_; ++i) {
         lt.lookups_[0]->AddVector(nh_);
@@ -178,26 +194,36 @@ class AutoregressiveMachine : public AbstractMachine {
         lt.lookups_[0]->AddVector(nh_);
       }
     }
-    lt.lookups_[0]->V(0) = a_;
-    RbmSpin::lncosh(lt.lookups_[0]->V(0), lt.lookups_[0]->V(nv_));
-    for (int i = 1; i < nv_; ++i) {
-      lt.lookups_[0]->V(i) =
-          lt.lookups_[0]->V(i - 1) + v(i - 1) * W_.block(0, i - 1, nh_, 1);
-      RbmSpin::lncosh(lt.lookups_[0]->V(i), lt.lookups_[0]->V(nv_ + i));
-    }
     // Output Layer
     if (lt.lookups_[1]->VectorSize() == 0) {
       for (int i = 0; i < nv_; ++i) {
-        lt.lookups_[1]->AddVector(2);
+        lt.lookups_[1]->AddVector(local_size_);
       }
       for (int i = 0; i < nv_; ++i) {
-        lt.lookups_[1]->AddVector(2);
+        lt.lookups_[1]->AddVector(local_size_);
       }
     }
+
     for (int i = 0; i < nv_; ++i) {
-      lt.lookups_[1]->V(i) =
-          V_.block(2 * i, 0, 2, nh_) * (lt.lookups_[0]->V(nv_ + i)) +
-          b_.segment(2 * i, 2);
+      Stepper(v, lt, i);
+    }
+  }
+
+  void Stepper(VisibleConstType v, LookupType &lt, int i) {
+    if (i == 0) {
+      lt.lookups_[0]->V(0) = a_;
+      RbmSpin::lncosh(lt.lookups_[0]->V(0), lt.lookups_[0]->V(nv_));
+      lt.lookups_[1]->V(0) =
+          V_.block(0, 0, local_size_, nh_) * (lt.lookups_[0]->V(nv_)) +
+          b_.segment(0, local_size_);
+      RbmSpin::lncosh(lt.lookups_[1]->V(0), lt.lookups_[1]->V(nv_));
+    } else {
+      lt.lookups_[0]->V(i) =
+          lt.lookups_[0]->V(i - 1) + v(i - 1) * W_.block(0, i - 1, nh_, 1);
+      RbmSpin::lncosh(lt.lookups_[0]->V(i), lt.lookups_[0]->V(nv_ + i));
+      lt.lookups_[1]->V(i) = V_.block(local_size_ * i, 0, local_size_, nh_) *
+                                 (lt.lookups_[0]->V(nv_ + i)) +
+                             b_.segment(local_size_ * i, local_size_);
       RbmSpin::lncosh(lt.lookups_[1]->V(i), lt.lookups_[1]->V(nv_ + i));
     }
   }
@@ -225,7 +251,7 @@ class AutoregressiveMachine : public AbstractMachine {
   Complex LogVal(VisibleConstType v, const LookupType &lt) override {
     Complex lv = 0.0;
     for (int i = 0; i < nv_; ++i) {
-      int s = v(i) > 0 ? 0 : 1;
+      int s = tolocal_.lower_bound(v(i))->second;
       lv += (lt.lookups_[1]->V(nv_ + i))(s);
     }
     return lv;
@@ -271,8 +297,8 @@ class AutoregressiveMachine : public AbstractMachine {
     // Derivative wrt to V
     int j = 0;
     for (int i = nv_ - 1; i >= 0; --i) {
-      k -= 2 * nh_;
-      int pos = v(i) > 0 ? 0 : 1;
+      k -= local_size_ * nh_;
+      int pos = tolocal_.lower_bound(v(i))->second;
       der.segment(k + pos * nh_, nh_) =
           std::tanh(lt.lookups_[1]->V(i)(pos)) * lt.lookups_[0]->V(nv_ + i);
     }
@@ -280,8 +306,8 @@ class AutoregressiveMachine : public AbstractMachine {
     // Derivative wrt to b
     if (useb_) {
       for (int i = nv_ - 1; i >= 0; --i) {
-        k -= 2;
-        int pos = v(i) > 0 ? 0 : 1;
+        k -= local_size_;
+        int pos = tolocal_.lower_bound(v(i))->second;
         der(k + pos) = std::tanh(lt.lookups_[1]->V(i)(pos));
       }
     }
@@ -291,28 +317,22 @@ class AutoregressiveMachine : public AbstractMachine {
     temp.setZero();
     for (int i = nv_ - 1; i > 0; --i) {
       k -= nh_;
-      int pos = v(i) > 0 ? 0 : 1;
+      int pos = tolocal_.lower_bound(v(i))->second;
       temp += std::tanh(lt.lookups_[1]->V(i)(pos)) *
-              (V_.block(2 * i + pos, 0, 1, nh_).transpose().array() *
+              (V_.block(local_size_ * i + pos, 0, 1, nh_).transpose().array() *
                ((lt.lookups_[0]->V(i)).array().tanh()))
                   .matrix();
-      std::cout << std::tanh(lt.lookups_[1]->V(i)(pos)) *
-                       (V_.block(2 * i + pos, 0, 1, nh_).transpose().array() *
-                        ((lt.lookups_[0]->V(i)).array().tanh()))
-                           .matrix()
-                << std::endl;
       der.segment(k, nh_) = v(i - 1) * temp;
     }
     // Derivative wrt to a
-    int pos = v(0) > 0 ? 0 : 1;
+    int pos = tolocal_.lower_bound(v(0))->second;
     temp += std::tanh(lt.lookups_[1]->V(0)(pos)) *
-            (V_.block(2 * 0 + pos, 0, 1, nh_).transpose().array() *
+            (V_.block(pos, 0, 1, nh_).transpose().array() *
              ((lt.lookups_[0]->V(0)).array().tanh()))
                 .matrix();
     if (usea_) {
       der.segment(0, nh_) = temp;
     }
-    std::cout << "----------------------" << std::endl;
     return der;
   }
 
