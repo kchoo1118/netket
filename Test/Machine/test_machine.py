@@ -16,14 +16,18 @@ g = nk.graph.Hypercube(length=4, n_dim=1)
 # Hilbert space of spins from given graph
 hi = nk.hilbert.Spin(s=0.5, total_sz = 0, graph=g)
 
+machines["RbmSpin 1d Hypercube spin"] = nk.machine.AutoregressiveMachine(
+    hilbert=hi, alpha=1)
+machines["RbmSpin 1d Hypercube spin"].init_random_parameters(seed=1232, sigma=0.03)
+machines["RbmSpin 1d Hypercube spin"].log_val([1,1,-1,-1])
 # machines["PairProductSinglet 1d Hypercube spin"] = nk.machine.PairProductSingletSymm(hilbert=hi)
-summachines = (
-    nk.machine.RbmSpinSymm(hilbert=hi, alpha=1),
-    nk.machine.RbmSpinSymm(hilbert=hi, alpha=1)
-)
-trainable = (True,True)
-machines["Sum Machine"] = nk.machine.SumMachine(hilbert=hi, machines=summachines, trainable=trainable)
-machines["Sum Machine"].init_random_parameters(seed=1232, sigma=0.03)
+# summachines = (
+#     nk.machine.RbmSpinSymm(hilbert=hi, alpha=1),
+#     nk.machine.RbmSpinSymm(hilbert=hi, alpha=1)
+# )
+# trainable = (True,True)
+# machines["Sum Machine"] = nk.machine.SumMachine(hilbert=hi, machines=summachines, trainable=trainable)
+# machines["Sum Machine"].init_random_parameters(seed=1232, sigma=0.03)
 # machines["PairProduct 1d Hypercube spin"] = nk.machine.PairProduct(hilbert=hi)
 #
 # machines["PairProductSymm 1d Hypercube spin"] = nk.machine.PairProductSymm(hilbert=hi)
@@ -165,9 +169,10 @@ def test_log_derivative():
             if("Jastrow" in name):
                 assert(np.max(np.imag(der_log)) == approx(0.))
 
-            grad = (nd.Gradient(log_val_f, step=1.0e-8))
+            grad = (nd.Gradient(log_val_f, step=1.0e-9))
             num_der_log = grad(randpars, machine, v)
-            print(der_log, num_der_log)
+            for i in range(npar):
+                print(der_log[i], num_der_log[i])
             assert(np.max(np.real(der_log - num_der_log))
                    == approx(0., rel=1e-4, abs=1e-4))
             # The imaginary part is a bit more tricky, there might be an arbitrary phase shift
