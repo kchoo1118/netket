@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #ifndef NETKET_PYSUMMACHINE_HPP
-#define NETKET_PYSUMMMACHINE_HPP
+#define NETKET_PYSUMMACHINE_HPP
 
 #include <mpi.h>
 #include <pybind11/complex.h>

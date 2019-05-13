@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #ifndef NETKET_PYPRODMACHINE_HPP
-#define NETKET_PYPRODMMACHINE_HPP
+#define NETKET_PYPRODMACHINE_HPP
 
 #include <mpi.h>
 #include <pybind11/complex.h>
