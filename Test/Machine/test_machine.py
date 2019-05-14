@@ -19,7 +19,7 @@ hi = nk.hilbert.Spin(s=0.5, total_sz = 0, graph=g)
 machines["RbmSpin 1d Hypercube spin"] = nk.machine.AutoregressiveMachine(
     hilbert=hi, alpha=1)
 machines["RbmSpin 1d Hypercube spin"].init_random_parameters(seed=1232, sigma=0.03)
-machines["RbmSpin 1d Hypercube spin"].log_val([1,1,-1,-1])
+# machines["RbmSpin 1d Hypercube spin"].log_val([1,1,-1,-1])
 # machines["PairProductSinglet 1d Hypercube spin"] = nk.machine.PairProductSingletSymm(hilbert=hi)
 # summachines = (
 #     nk.machine.RbmSpinSymm(hilbert=hi, alpha=1),
@@ -98,7 +98,6 @@ machines["RbmSpin 1d Hypercube spin"].log_val([1,1,-1,-1])
 
 np.random.seed(12346)
 
-
 def log_val_f(par, machine, v):
     machine.parameters = np.copy(par)
     return machine.log_val(v)
@@ -172,7 +171,13 @@ def test_log_derivative():
             grad = (nd.Gradient(log_val_f, step=1.0e-9))
             num_der_log = grad(randpars, machine, v)
             for i in range(npar):
+                if (np.max(np.real(der_log[i] - num_der_log[i])) > 1e-3):
+                    print(der_log[i], num_der_log[i])
+                    print(">>> i = ",i)
+            for i in range(56, 112):
                 print(der_log[i], num_der_log[i])
+
+
             assert(np.max(np.real(der_log - num_der_log))
                    == approx(0., rel=1e-4, abs=1e-4))
             # The imaginary part is a bit more tricky, there might be an arbitrary phase shift
@@ -207,10 +212,10 @@ def test_log_val_diff():
             for i in range(100):
                 # generate n_change unique sites to be changed
                 tc = np.random.choice(hi.size, 2, replace=False)
-                if rstate[tc][0]!=rstate[tc][1]:
-                    newconfs.append(np.array([rstate[tc][1], rstate[tc][0]]))
-                    tochange.append(tc)
-                    break
+                # if rstate[tc][0]!=rstate[tc][1]:
+                #     newconfs.append(np.array([rstate[tc][1], rstate[tc][0]]))
+                #     tochange.append(tc)
+                #     break
 
             ldiffs = machine.log_val_diff(rstate, tochange, newconfs)
             valzero = machine.log_val(rstate)
@@ -245,3 +250,5 @@ def test_nvisible():
         hi = machine.hilbert
 
         assert(machine.n_visible == hi.size)
+
+test_log_derivative()

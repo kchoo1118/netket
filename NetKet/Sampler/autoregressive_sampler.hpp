@@ -84,8 +84,7 @@ class AutoregressiveSampler : public AbstractSampler {
     for (int i = 0; i < nv_; ++i) {
       psi_.Stepper(v_, lt_, i);
       for (int j = 0; j < local_size_; ++j) {
-        local_prob_(j) =
-            std::exp(2.0 * std::real((lt_.lookups_[1]->V(nv_ + i))(j)));
+        local_prob_(j) = std::norm(std::exp((lt_.V(i))(j)));
       }
       dist_ = std::discrete_distribution<int>(local_prob_.data(),
                                               local_prob_.data() + local_size_);
@@ -101,8 +100,7 @@ class AutoregressiveSampler : public AbstractSampler {
     for (int i = 0; i < nv_; ++i) {
       psi_.Stepper(v_, lt_, i);
       for (int j = 0; j < local_size_; ++j) {
-        local_prob_(j) =
-            std::exp(2.0 * std::real((lt_.lookups_[1]->V(nv_ + i))(j)));
+        local_prob_(j) = std::norm(std::exp((lt_.V(i))(j)));
       }
       dist_ = std::discrete_distribution<int>(local_prob_.data(),
                                               local_prob_.data() + local_size_);
