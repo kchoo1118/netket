@@ -28,7 +28,7 @@ void AddAutoregressiveSampler(py::module &subm) {
                                                      R"EOF(
     This sampler generates i.i.d. samples from $$|\Psi(s)|^2$$.
     )EOF")
-      .def(py::init<AutoregressiveMachine &>(), py::keep_alive<1, 2>(),
+      .def(py::init<AutoregressiveRealMachine &>(), py::keep_alive<1, 2>(),
            py::arg("machine"), R"EOF(
              Constructs a new ``ExactSampler`` given a machine.
 

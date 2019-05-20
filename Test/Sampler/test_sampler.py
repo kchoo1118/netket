@@ -48,8 +48,8 @@ hi = nk.hilbert.Spin(s=0.5, graph=g)
 
 g = nk.graph.Hypercube(length=5, n_dim=1, pbc=False)
 hi = nk.hilbert.Spin(s=0.5, graph=g)
-ma=nk.machine.AutoregressiveMachine(hilbert=hi, alpha=1)
-ma.init_random_parameters(seed=1234, sigma=0.4)
+ma=nk.machine.AutoregressiveRealMachine(hilbert=hi, alpha=1, offset=1.2)
+ma.init_random_parameters(seed=1234, sigma=0.1)
 sa = nk.sampler.AutoregressiveSampler(machine=ma)
 # sa = nk.sampler.MetropolisLocal(machine=ma)
 # sa = nk.sampler.ExactSampler(machine=ma)
@@ -129,6 +129,7 @@ def test_correct_sampling():
 
         hilb_index = nk.hilbert.HilbertIndex(hi)
         n_states = hilb_index.n_states
+        print("number of states = ", n_states)
 
         n_samples = max(10 * n_states, 10000)
 
@@ -149,6 +150,9 @@ def test_correct_sampling():
 
         print(hist_exsamp)
         print(hist_samp)
+        for i in range(len(hist_exsamp)):
+            if hist_exsamp[i] > 0:
+                print(hilb_index.number_to_state(i))
 
         # now test that histograms are close in norm
         delta = hist_samp - hist_exsamp
@@ -158,3 +162,5 @@ def test_correct_sampling():
         eps = np.sqrt(1. / float(n_samples))
 
         assert(z == approx(0., rel=5 * eps, abs=5 * eps))
+
+test_correct_sampling()

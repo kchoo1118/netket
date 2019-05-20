@@ -26,7 +26,7 @@ namespace netket {
 
 // Metropolis sampling generating local exchanges
 class AutoregressiveSampler : public AbstractSampler {
-  AutoregressiveMachine &psi_;
+  AutoregressiveRealMachine &psi_;
 
   const AbstractHilbert &hilbert_;
 
@@ -50,7 +50,7 @@ class AutoregressiveSampler : public AbstractSampler {
   std::discrete_distribution<int> dist_;
 
  public:
-  AutoregressiveSampler(AutoregressiveMachine &psi)
+  AutoregressiveSampler(AutoregressiveRealMachine &psi)
       : psi_(psi),
         hilbert_(psi.GetHilbert()),
         nv_(hilbert_.Size()),

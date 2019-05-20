@@ -16,8 +16,8 @@ g = nk.graph.Hypercube(length=4, n_dim=1)
 # Hilbert space of spins from given graph
 hi = nk.hilbert.Spin(s=0.5, total_sz = 0, graph=g)
 
-machines["RbmSpin 1d Hypercube spin"] = nk.machine.AutoregressiveMachine(
-    hilbert=hi, alpha=1)
+machines["RbmSpin 1d Hypercube spin"] = nk.machine.AutoregressiveRealMachine(
+    hilbert=hi, alpha=1, total=2)
 machines["RbmSpin 1d Hypercube spin"].init_random_parameters(seed=1232, sigma=0.03)
 # machines["RbmSpin 1d Hypercube spin"].log_val([1,1,-1,-1])
 # machines["PairProductSinglet 1d Hypercube spin"] = nk.machine.PairProductSingletSymm(hilbert=hi)
@@ -157,9 +157,9 @@ def test_log_derivative():
         rg = nk.utils.RandomEngine(seed=1234)
         v = np.zeros(hi.size)
 
-        for i in range(100):
+        for i in range(1):
             hi.random_vals(v, rg)
-
+            # v =np.array([1,1,-1,-1])
             randpars = 0.1 * (np.random.randn(npar) +
                               1.0j * np.random.randn(npar))
             machine.parameters = randpars
@@ -170,12 +170,14 @@ def test_log_derivative():
 
             grad = (nd.Gradient(log_val_f, step=1.0e-9))
             num_der_log = grad(randpars, machine, v)
+            print(">>>>>>>",v,"<<<<<<<<<")
             for i in range(npar):
-                if (np.max(np.real(der_log[i] - num_der_log[i])) > 1e-3):
-                    print(der_log[i], num_der_log[i])
-                    print(">>> i = ",i)
-            for i in range(56, 112):
+                # if (np.max(np.real(der_log[i] - num_der_log[i])) > 1e-4):
+                #     print(der_log[i], num_der_log[i])
+                #     print(">>> i = ",i)
                 print(der_log[i], num_der_log[i])
+            # for i in range(56, 112):
+            #     print(der_log[i], num_der_log[i])
 
 
             assert(np.max(np.real(der_log - num_der_log))

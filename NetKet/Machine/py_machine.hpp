@@ -26,6 +26,7 @@
 #include "Layers/py_layer.hpp"
 #include "abstract_machine.hpp"
 #include "py_autoregressive.hpp"
+#include "py_autoregressive_real.hpp"
 #include "py_ffnn.hpp"
 #include "py_jastrow.hpp"
 #include "py_jastrow_symm.hpp"
@@ -169,6 +170,7 @@ void AddMachineModule(py::module &m) {
   AddProductMachine(subm);
   AddSumMachine(subm);
   AddAutoregressiveMachine(subm);
+  AddAutoregressiveRealMachine(subm);
 }
 
 }  // namespace netket
