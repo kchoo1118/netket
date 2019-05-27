@@ -138,7 +138,6 @@ class AutoregressiveRealMachine : public AbstractMachine {
       k += local_size_;
     }
     SetParameters(VectorType(par));
-    std::cout << b_.transpose() << std::endl;
   }
 
   VectorType GetParameters() override {
