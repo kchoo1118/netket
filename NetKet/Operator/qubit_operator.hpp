@@ -117,6 +117,15 @@ class QubitOperator : public AbstractOperator {
     InfoMessage() << "Nqubits = " << nqubits_ << std::endl;
     InfoMessage() << "Noperators = " << noperators_ << std::endl;
     InfoMessage() << "Nchanges = " << nchanges << std::endl;
+
+    VectorType v(nqubits_);
+    v.setZero();
+    std::vector<std::complex<double>> mel;
+    std::vector<std::vector<int>> connectors;
+    std::vector<std::vector<double>> newconfs;
+    FindConn(v, mel, connectors, newconfs);
+    InfoMessage() << "Number of connections = " << connectors.size()
+                  << std::endl;
   }
 
   void FindConn(VectorConstRefType v, std::vector<std::complex<double>> &mel,
