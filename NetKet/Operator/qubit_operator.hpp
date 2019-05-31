@@ -180,7 +180,7 @@ class QubitOperator : public AbstractOperator {
         }
         mel_temp += m_temp;
       }
-      if (std::abs(mel_temp) > 1e-7) {
+      if (std::abs(mel_temp) > 1e-10) {
         std::vector<double> newconf_temp(tochange2_[i].size());
         int jj = 0;
         for (auto sj : tochange2_[i]) {
