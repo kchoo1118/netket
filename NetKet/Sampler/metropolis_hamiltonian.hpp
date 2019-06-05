@@ -104,7 +104,7 @@ class MetropolisHamiltonian : public AbstractSampler {
 
       const double w1 = tochange_.size();
 
-      std::uniform_int_distribution<int> distrs(0, tochange_.size() - 1);
+      std::uniform_int_distribution<int> distrs(1, tochange_.size() - 1);
       std::uniform_real_distribution<double> distu;
 
       // picking a random state to transit to
