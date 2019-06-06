@@ -113,6 +113,9 @@ class MetropolisExchangeChemistry : public AbstractSampler {
       if (randtransitions_) {
         std::cout << "# Using random transitions" << std::endl;
       }
+      if (conservespin_) {
+        std::cout << "# Using only spin conserving transitions" << std::endl;
+      }
     }
 
     if (mynode_ == 0) {
