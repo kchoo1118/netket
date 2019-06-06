@@ -60,6 +60,8 @@ class MetropolisExchangeChemistry : public AbstractSampler {
   bool randtransitions_;
   double acceptancead_;
 
+  bool conservespin_;
+
   std::vector<std::vector<int>> tochange_;
   std::vector<std::vector<double>> newconfs_;
   std::vector<Complex> mel_;
@@ -67,14 +69,15 @@ class MetropolisExchangeChemistry : public AbstractSampler {
  public:
   MetropolisExchangeChemistry(AbstractMachine &psi, H &hamiltonian, int npar,
                               std::string mapping, bool adaptivesweep,
-                              bool randtransitions)
+                              bool randtransitions, bool conservespin)
       : psi_(psi),
         h_(hamiltonian),
         hilbert_(psi.GetHilbert()),
         nv_(hilbert_.Size()),
         nparticles_(npar),
         adaptivesweep_(adaptivesweep),
-        randtransitions_(randtransitions) {
+        randtransitions_(randtransitions),
+        conservespin_(conservespin) {
     MappingMatrix_ = CreateMapping(mapping);
     Init();
   }
@@ -255,38 +258,36 @@ class MetropolisExchangeChemistry : public AbstractSampler {
       std::vector<double> newconf;
 
       for (int i = 0; i < nv_; i++) {
-        int half = disthalf(rgen_);
-
         std::vector<int> occupied;
         std::vector<int> empty;
-
-        // if (half == 0) {
-        //   for (int k = 0; k < nv_ / 2; k++) {
-        //     if (std::abs(vjw_(k) - 1) <
-        //     std::numeric_limits<double>::epsilon())
-        //     {
-        //       occupied.push_back(k);
-        //     } else {
-        //       empty.push_back(k);
-        //     }
-        //   }
-        // } else {
-        //   for (int k = nv_ / 2; k < nv_; k++) {
-        //     if (std::abs(vjw_(k) - 1) <
-        //     std::numeric_limits<double>::epsilon())
-        //     {
-        //       occupied.push_back(k);
-        //     } else {
-        //       empty.push_back(k);
-        //     }
-        //   }
-        // }
-
-        for (int k = 0; k < nv_; k++) {
-          if (std::abs(vjw_(k) - 1) < 1.0e-4) {
-            occupied.push_back(k);
+        if (conservespin_) {
+          int half = disthalf(rgen_);
+          if (half == 0) {
+            for (int k = 0; k < nv_ / 2; k++) {
+              if (std::abs(vjw_(k) - 1) <
+                  std::numeric_limits<double>::epsilon()) {
+                occupied.push_back(k);
+              } else {
+                empty.push_back(k);
+              }
+            }
           } else {
-            empty.push_back(k);
+            for (int k = nv_ / 2; k < nv_; k++) {
+              if (std::abs(vjw_(k) - 1) <
+                  std::numeric_limits<double>::epsilon()) {
+                occupied.push_back(k);
+              } else {
+                empty.push_back(k);
+              }
+            }
+          }
+        } else {
+          for (int k = 0; k < nv_; k++) {
+            if (std::abs(vjw_(k) - 1) < 1.0e-4) {
+              occupied.push_back(k);
+            } else {
+              empty.push_back(k);
+            }
           }
         }
 
