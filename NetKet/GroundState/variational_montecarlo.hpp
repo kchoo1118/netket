@@ -101,18 +101,21 @@ class VariationalMonteCarlo {
 
     Index cur_iter_;
 
+    double clip_;
+
    public:
     Iterator(VariationalMonteCarlo &vmc, Index step_size,
-             nonstd::optional<Index> n_iter)
+             nonstd::optional<Index> n_iter, double clip)
         : vmc_(vmc),
           step_size_(step_size),
           n_iter_(std::move(n_iter)),
-          cur_iter_(0) {}
+          cur_iter_(0),
+          clip_(clip) {}
 
     Index operator*() const { return cur_iter_; }
 
     Iterator &operator++() {
-      vmc_.Advance(step_size_);
+      vmc_.Advance(step_size_, clip_);
       cur_iter_ += step_size_;
       return *this;
     }
@@ -297,30 +300,31 @@ class VariationalMonteCarlo {
 
   double Elocvar() { return elocvar_; }
 
-  void Advance(Index steps = 1) {
+  void Advance(Index steps = 1, double clip = 100) {
     assert(steps > 0);
     for (Index i = 0; i < steps; ++i) {
       Sample();
       Gradient();
-      UpdateParameters();
+      UpdateParameters(clip);
     }
   }
 
   Iterator Iterate(const nonstd::optional<Index> &n_iter = nonstd::nullopt,
-                   Index step_size = 1) {
+                   Index step_size = 1, double clip = 100) {
     assert(!n_iter.has_value() || n_iter.value() > 0);
     assert(step_size > 0);
 
     opt_.Reset();
     InitSweeps();
 
-    Advance(step_size);
-    return Iterator(*this, step_size, n_iter);
+    Advance(step_size, clip);
+    return Iterator(*this, step_size, n_iter, clip);
   }
 
   void Run(const std::string &output_prefix,
            nonstd::optional<Index> n_iter = nonstd::nullopt,
-           Index step_size = 1, Index save_params_every = 50) {
+           Index step_size = 1, Index save_params_every = 50,
+           double clip = 100) {
     assert(n_iter > 0);
     assert(step_size > 0);
     assert(save_params_every > 0);
@@ -332,7 +336,7 @@ class VariationalMonteCarlo {
     }
     opt_.Reset();
 
-    for (const auto step : Iterate(n_iter, step_size)) {
+    for (const auto step : Iterate(n_iter, step_size, clip)) {
       ComputeObservables();
 
       // Note: This has to be called in all MPI processes, because converting
@@ -351,22 +355,23 @@ class VariationalMonteCarlo {
     }
   }
 
-  void UpdateParameters() {
+  void UpdateParameters(double clip) {
     auto pars = psi_.GetParameters();
 
     Eigen::VectorXcd deltap(npar_);
 
-    if (dosr_) {
-      sr_.ComputeUpdate(Ok_, grad_, deltap);
-    } else {
-      deltap = grad_;
+    if (grad_.norm() < clip) {
+      if (dosr_) {
+        sr_.ComputeUpdate(Ok_, grad_, deltap);
+      } else {
+        deltap = grad_;
+      }
+
+      opt_.Update(deltap, pars);
+      SendToAll(pars);
+
+      psi_.SetParameters(pars);
     }
-
-    opt_.Update(deltap, pars);
-    SendToAll(pars);
-
-    psi_.SetParameters(pars);
-
     MPI_Barrier(MPI_COMM_WORLD);
   }
 
