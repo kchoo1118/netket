@@ -50,6 +50,8 @@ class QubitOperator : public AbstractOperator {
   const std::complex<double> I_;
   std::discrete_distribution<> distrandconn_;
 
+  double cutoff_;
+
  public:
   using VectorType = AbstractOperator::VectorType;
   using VectorRefType = AbstractOperator::VectorRefType;
@@ -57,12 +59,14 @@ class QubitOperator : public AbstractOperator {
 
   explicit QubitOperator(const AbstractHilbert &hilbert,
                          const std::vector<std::string> &ops,
-                         const std::vector<std::complex<double>> &opweights)
+                         const std::vector<std::complex<double>> &opweights,
+                         double cutoff = 1e-10)
       : hilbert_(hilbert),
         nqubits_(hilbert.Size()),
         noperators_(ops.size()),
         weights_(std::move(opweights)),
-        I_(std::complex<double>(0, 1)) {
+        I_(std::complex<double>(0, 1)),
+        cutoff_(cutoff) {
     tochange_.resize(noperators_);
     zcheck_.resize(noperators_);
     int nchanges = 0;
@@ -180,7 +184,7 @@ class QubitOperator : public AbstractOperator {
         }
         mel_temp += m_temp;
       }
-      if (std::abs(mel_temp) > 1e-10) {
+      if (std::abs(mel_temp) > cutoff_) {
         std::vector<double> newconf_temp(tochange2_[i].size());
         int jj = 0;
         for (auto sj : tochange2_[i]) {
