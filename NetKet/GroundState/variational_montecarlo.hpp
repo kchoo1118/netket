@@ -63,6 +63,7 @@ class VariationalMonteCarlo {
   Eigen::MatrixXd vsamp_;
 
   Eigen::VectorXcd grad_;
+  Eigen::VectorXcd deltap_;
 
   int totalnodes_;
   int mynode_;
@@ -156,6 +157,7 @@ class VariationalMonteCarlo {
     opt_.Init(npar_, psi_.IsHolomorphic());
 
     grad_.resize(npar_);
+    deltap_.resize(npar_);
     Okmean_.resize(npar_);
 
     MPI_Comm_size(MPI_COMM_WORLD, &totalnodes_);
@@ -344,6 +346,7 @@ class VariationalMonteCarlo {
       auto obs_data = json(obsmanager_);
       obs_data["Acceptance"] = sampler_.Acceptance();
       obs_data["GradNorm"] = grad_.norm();
+      obs_data["UpdateNorm"] = deltap_.norm();
 
       // writer.has_value() iff the MPI rank is 0, so the output is only
       // written once
@@ -358,15 +361,12 @@ class VariationalMonteCarlo {
   void UpdateParameters(double clip) {
     auto pars = psi_.GetParameters();
 
-    Eigen::VectorXcd deltap(npar_);
-
-    if (grad_.norm() < clip) {
-      if (dosr_) {
-        sr_.ComputeUpdate(Ok_, grad_, deltap);
-      } else {
-        deltap = grad_;
-      }
-
+    if (dosr_) {
+      sr_.ComputeUpdate(Ok_, grad_, deltap_);
+    } else {
+      deltap_ = grad_;
+    }
+    if (deltap_.norm() < clip) {
       opt_.Update(deltap, pars);
       SendToAll(pars);
 
