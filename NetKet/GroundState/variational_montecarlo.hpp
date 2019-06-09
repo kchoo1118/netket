@@ -367,7 +367,7 @@ class VariationalMonteCarlo {
       deltap_ = grad_;
     }
     if (deltap_.norm() < clip) {
-      opt_.Update(deltap, pars);
+      opt_.Update(deltap_, pars);
       SendToAll(pars);
 
       psi_.SetParameters(pars);
