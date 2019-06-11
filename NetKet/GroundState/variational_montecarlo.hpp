@@ -85,6 +85,8 @@ class VariationalMonteCarlo {
   double elocvar_;
   int npar_;
 
+  Eigen::VectorXd acceptance_;
+
  public:
   class Iterator {
    public:
@@ -344,7 +346,10 @@ class VariationalMonteCarlo {
       // Note: This has to be called in all MPI processes, because converting
       // the ObsManager to JSON performs a MPI reduction.
       auto obs_data = json(obsmanager_);
-      obs_data["Acceptance"] = sampler_.Acceptance();
+      acceptance_ = sampler_.Acceptance();
+      SumOnNodes(acceptance_);
+      acceptance_ /= double(totalnodes_);
+      obs_data["Acceptance"] = acceptance_;
       obs_data["GradNorm"] = grad_.norm();
       obs_data["UpdateNorm"] = deltap_.norm();
 
