@@ -30,6 +30,7 @@
 #include "py_ising.hpp"
 #include "py_local_operator.hpp"
 #include "py_qubit_operator.hpp"
+#include "py_qubit_operator2.hpp"
 
 namespace py = pybind11;
 
@@ -64,6 +65,7 @@ void AddOperatorModule(py::module &m) {
   AddBoseHubbard(subm);
   AddLocalOperator(subm);
   AddQubitOperator(subm);
+  AddQubitOperator2(subm);
   AddGraphOperator(subm);
   AddMatrixWrapper(subm);
 }
