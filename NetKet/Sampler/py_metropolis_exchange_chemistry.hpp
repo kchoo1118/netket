@@ -42,11 +42,11 @@ void AddMetropolisExchangeChemistry(py::module &subm) {
     of the Hamiltonian. This is in generally not true for the local samplers instead.
     )EOF")
       .def(py::init<AbstractMachine &, AbstractOperator &, int, std::string,
-                    bool, bool, bool>(),
+                    bool, bool, bool, bool>(),
            py::keep_alive<1, 2>(), py::keep_alive<1, 3>(), py::arg("machine"),
            py::arg("hamiltonian"), py::arg("npar"), py::arg("mapping"),
            py::arg("adaptive_sweep"), py::arg("rand_tran"),
-           py::arg("conserve_spin"), R"EOF(
+           py::arg("conserve_spin"), py::arg("particle_hole"), R"EOF(
              Constructs a new ``MetropolisHamiltonian`` sampler given a machine
              and a Hamiltonian operator (or in general an arbitrary Operator).
 

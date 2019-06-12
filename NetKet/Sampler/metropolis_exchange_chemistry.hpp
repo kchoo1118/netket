@@ -66,10 +66,13 @@ class MetropolisExchangeChemistry : public AbstractSampler {
   std::vector<std::vector<double>> newconfs_;
   std::vector<Complex> mel_;
 
+  bool particlehole_;
+
  public:
   MetropolisExchangeChemistry(AbstractMachine &psi, H &hamiltonian, int npar,
                               std::string mapping, bool adaptivesweep,
-                              bool randtransitions, bool conservespin)
+                              bool randtransitions, bool conservespin,
+                              bool particlehole)
       : psi_(psi),
         h_(hamiltonian),
         hilbert_(psi.GetHilbert()),
@@ -77,7 +80,8 @@ class MetropolisExchangeChemistry : public AbstractSampler {
         nparticles_(npar),
         adaptivesweep_(adaptivesweep),
         randtransitions_(randtransitions),
-        conservespin_(conservespin) {
+        conservespin_(conservespin),
+        particlehole_(particlehole) {
     MappingMatrix_ = CreateMapping(mapping);
     Init();
   }
@@ -165,12 +169,27 @@ class MetropolisExchangeChemistry : public AbstractSampler {
   }
 
   Eigen::VectorXd OccupationMapping(const Eigen::VectorXd &v) {
-    Eigen::VectorXd vm = MappingMatrix_ * v;
+    if (particlehole_) {
+      Eigen::VectorXd vnew = v;
+      for (int i = 0; i < std::ceil(double(nparticles_) / 2.); i++) {
+        vnew(i) = vnew(i) > 0.5 ? 0 : 1;
+        vnew(nv_ / 2 + i) = vnew(nv_ / 2 + i) > 0.5 ? 0 : 1;
+      }
 
-    for (int i = 0; i < nv_; i++) {
-      vm(i) = int(vm(i)) % 2;
+      Eigen::VectorXd vm = MappingMatrix_ * vnew;
+
+      for (int i = 0; i < nv_; i++) {
+        vm(i) = int(vm(i)) % 2;
+      }
+      return vm;
+    } else {
+      Eigen::VectorXd vm = MappingMatrix_ * v;
+
+      for (int i = 0; i < nv_; i++) {
+        vm(i) = int(vm(i)) % 2;
+      }
+      return vm;
     }
-    return vm;
   }
 
   void Seed(int baseseed = 0) {
