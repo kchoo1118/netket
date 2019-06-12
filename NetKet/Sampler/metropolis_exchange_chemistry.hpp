@@ -66,13 +66,14 @@ class MetropolisExchangeChemistry : public AbstractSampler {
   std::vector<std::vector<double>> newconfs_;
   std::vector<Complex> mel_;
 
+  int njumps_;
   bool particlehole_;
 
  public:
   MetropolisExchangeChemistry(AbstractMachine &psi, H &hamiltonian, int npar,
-                              std::string mapping, bool adaptivesweep,
-                              bool randtransitions, bool conservespin,
-                              bool particlehole)
+                              int njumps, std::string mapping,
+                              bool adaptivesweep, bool randtransitions,
+                              bool conservespin, bool particlehole)
       : psi_(psi),
         h_(hamiltonian),
         hilbert_(psi.GetHilbert()),
@@ -81,6 +82,7 @@ class MetropolisExchangeChemistry : public AbstractSampler {
         adaptivesweep_(adaptivesweep),
         randtransitions_(randtransitions),
         conservespin_(conservespin),
+        njumps_(njumps),
         particlehole_(particlehole) {
     MappingMatrix_ = CreateMapping(mapping);
     Init();
@@ -274,8 +276,7 @@ class MetropolisExchangeChemistry : public AbstractSampler {
       std::vector<int> tochange;
       std::uniform_real_distribution<double> distu;
       std::uniform_int_distribution<int> disthalf(0, 1);
-      int njumps = 3;
-      std::uniform_int_distribution<int> distnumber(1, njumps);
+      std::uniform_int_distribution<int> distnumber(1, njumps_);
 
       std::vector<double> newconf;
 
