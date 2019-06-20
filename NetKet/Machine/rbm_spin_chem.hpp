@@ -336,7 +336,7 @@ class RbmSpinChem : public AbstractMachine {
   }
 
   void to_json(json &j) const override {
-    j["Name"] = "RbmSpin";
+    j["Name"] = "RbmSpinChem";
     j["Nvisible"] = nv_;
     j["Nhidden"] = nh_;
     j["UseVisibleBias"] = usea_;
