@@ -341,9 +341,9 @@ class RbmSpinChem : public AbstractMachine {
     j["Nhidden"] = nh_;
     j["UseVisibleBias"] = usea_;
     j["UseHiddenBias"] = useb_;
-    j["asymm"] = asymm_;
+    j["aspin"] = aspin_;
     j["b"] = b_;
-    j["Wsymm"] = Wsymm_;
+    j["Wspin"] = Wspin_;
   }
 
   void from_json(const json &pars) override {
@@ -374,8 +374,8 @@ class RbmSpinChem : public AbstractMachine {
     Init();
 
     // Loading parameters, if defined in the input
-    if (FieldExists(pars, "asymm")) {
-      asymm_ = FieldVal<VectorType>(pars, "asymm");
+    if (FieldExists(pars, "aspin")) {
+      aspin_ = FieldVal<VectorType>(pars, "aspin");
     } else {
       a_.setZero();
     }
@@ -385,14 +385,14 @@ class RbmSpinChem : public AbstractMachine {
     } else {
       b_.setZero();
     }
-    if (FieldExists(pars, "Wsymm")) {
-      Wsymm_ = FieldVal<MatrixType>(pars, "Wsymm");
+    if (FieldExists(pars, "Wspin")) {
+      Wspin_ = FieldVal<MatrixType>(pars, "Wspin");
     }
 
-    a_.segment(0, nv_ / 2) = asymm_;
-    a_.segment(nv_ / 2, nv_ / 2) = asymm_;
-    W_.block(0, 0, nv_ / 2, nh_) = Wsymm_;
-    W_.block(nv_ / 2, 0, nv_ / 2, nh_) = Wsymm_;
+    a_.segment(0, nv_ / 2) = aspin_;
+    a_.segment(nv_ / 2, nv_ / 2) = aspin_;
+    W_.block(0, 0, nv_ / 2, nh_) = Wspin_;
+    W_.block(nv_ / 2, 0, nv_ / 2, nh_) = Wspin_;
   }
 };
 
