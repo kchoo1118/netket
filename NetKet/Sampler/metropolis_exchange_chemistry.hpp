@@ -246,8 +246,17 @@ class MetropolisExchangeChemistry : public AbstractSampler {
 
       for (int i = 0; i < std::max(1., 1. / acceptancead_) * nv_; i++) {
         h_.FindConn(v_, mel_, tochange_, newconfs_);
+        std::vector<double> melabs(mel_.size());
+        for (int j = 0; j < mel_.size(); ++j) {
+          if (tochange_[j].size() == 0) {
+            melabs[j] = 0.0;
+          } else {
+            melabs[j] = std::abs(mel_[j]);
+          }
+        }
 
-        std::uniform_int_distribution<int> distrs(0, tochange_.size() - 1);
+        std::discrete_distribution<int> distrs(melabs.begin(), melabs.end());
+        // std::uniform_int_distribution<int> distrs(0, tochange_.size() - 1);
         std::uniform_real_distribution<double> distu;
 
         // picking a random state to transit to
@@ -281,30 +290,41 @@ class MetropolisExchangeChemistry : public AbstractSampler {
       std::vector<double> newconf;
 
       for (int i = 0; i < nv_; i++) {
-        std::vector<int> occupied;
-        std::vector<int> empty;
+        int nflips = distnumber(rgen_);
+        Eigen::VectorXd vjwt = vjw_;
+
         if (conservespin_) {
-          int half = disthalf(rgen_);
-          if (half == 0) {
-            for (int k = 0; k < nv_ / 2; k++) {
-              if (std::abs(vjw_(k) - 1) <
-                  std::numeric_limits<double>::epsilon()) {
-                occupied.push_back(k);
-              } else {
-                empty.push_back(k);
+          for (int j = 0; j < nflips; ++j) {
+            std::vector<int> occupied;
+            std::vector<int> empty;
+            int half = disthalf(rgen_);
+            if (half == 0) {
+              for (int k = 0; k < nv_ / 2; k++) {
+                if (std::abs(vjwt(k) - 1) <
+                    std::numeric_limits<double>::epsilon()) {
+                  occupied.push_back(k);
+                } else {
+                  empty.push_back(k);
+                }
+              }
+            } else {
+              for (int k = nv_ / 2; k < nv_; k++) {
+                if (std::abs(vjwt(k) - 1) <
+                    std::numeric_limits<double>::epsilon()) {
+                  occupied.push_back(k);
+                } else {
+                  empty.push_back(k);
+                }
               }
             }
-          } else {
-            for (int k = nv_ / 2; k < nv_; k++) {
-              if (std::abs(vjw_(k) - 1) <
-                  std::numeric_limits<double>::epsilon()) {
-                occupied.push_back(k);
-              } else {
-                empty.push_back(k);
-              }
-            }
+            std::shuffle(empty.begin(), empty.end(), rgen_);
+            std::shuffle(occupied.begin(), occupied.end(), rgen_);
+            vjwt(empty[0]) = 1;
+            vjwt(occupied[0]) = 0;
           }
         } else {
+          std::vector<int> occupied;
+          std::vector<int> empty;
           for (int k = 0; k < nv_; k++) {
             if (std::abs(vjw_(k) - 1) < 1.0e-4) {
               occupied.push_back(k);
@@ -312,18 +332,13 @@ class MetropolisExchangeChemistry : public AbstractSampler {
               empty.push_back(k);
             }
           }
-        }
+          std::shuffle(empty.begin(), empty.end(), rgen_);
+          std::shuffle(occupied.begin(), occupied.end(), rgen_);
 
-        std::shuffle(empty.begin(), empty.end(), rgen_);
-        std::shuffle(occupied.begin(), occupied.end(), rgen_);
-
-        int nflips = distnumber(rgen_);
-
-        Eigen::VectorXd vjwt = vjw_;
-
-        for (int k = 0; k < nflips; k++) {
-          vjwt(empty[k]) = 1;
-          vjwt(occupied[k]) = 0;
+          for (int k = 0; k < nflips; k++) {
+            vjwt(empty[k]) = 1;
+            vjwt(occupied[k]) = 0;
+          }
         }
 
         tochange.resize(0);
@@ -331,21 +346,12 @@ class MetropolisExchangeChemistry : public AbstractSampler {
 
         Eigen::VectorXd vprime = OccupationMapping(vjwt);
 
-        // std::cout << "------" << std::endl;
-        // std::cout << vjw_.transpose() << std::endl;
-        // std::cout << vjwt.transpose() << std::endl;
-        // std::cout << v_.transpose() << std::endl;
-        // std::cout << vprime.transpose() << std::endl;
-
         for (int k = 0; k < nv_; k++) {
           if (std::abs(vprime(k) - v_(k)) > 1.0e-4) {
             newconf.push_back(vprime(k));
             tochange.push_back(k);
           }
-          // std::cout << k << std::endl;
         }
-
-        // std::cout << "------" << std::endl;
 
         double ratio =
             std::norm(std::exp(psi_.LogValDiff(v_, tochange, newconf, lt_)));

@@ -341,16 +341,16 @@ class RbmSpinChem : public AbstractMachine {
     j["Nhidden"] = nh_;
     j["UseVisibleBias"] = usea_;
     j["UseHiddenBias"] = useb_;
-    j["a"] = a_;
+    j["asymm"] = asymm_;
     j["b"] = b_;
-    j["W"] = W_;
+    j["Wsymm"] = Wsymm_;
   }
 
   void from_json(const json &pars) override {
     std::string name = FieldVal<std::string>(pars, "Name");
-    if (name != "RbmSpin") {
+    if (name != "RbmSpinChem") {
       throw InvalidInputError(
-          "Error while constructing RbmSpin from input parameters");
+          "Error while constructing RbmSpinChem from input parameters");
     }
 
     if (FieldExists(pars, "Nvisible")) {
@@ -374,8 +374,8 @@ class RbmSpinChem : public AbstractMachine {
     Init();
 
     // Loading parameters, if defined in the input
-    if (FieldExists(pars, "a")) {
-      a_ = FieldVal<VectorType>(pars, "a");
+    if (FieldExists(pars, "asymm")) {
+      asymm_ = FieldVal<VectorType>(pars, "asymm");
     } else {
       a_.setZero();
     }
@@ -385,9 +385,14 @@ class RbmSpinChem : public AbstractMachine {
     } else {
       b_.setZero();
     }
-    if (FieldExists(pars, "W")) {
-      W_ = FieldVal<MatrixType>(pars, "W");
+    if (FieldExists(pars, "Wsymm")) {
+      Wsymm_ = FieldVal<MatrixType>(pars, "Wsymm");
     }
+
+    a_.segment(0, nv_ / 2) = asymm_;
+    a_.segment(nv_ / 2, nv_ / 2) = asymm_;
+    W_.block(0, 0, nv_ / 2, nh_) = Wsymm_;
+    W_.block(nv_ / 2, 0, nv_ / 2, nh_) = Wsymm_;
   }
 };
 
