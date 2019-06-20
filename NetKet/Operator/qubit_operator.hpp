@@ -137,36 +137,6 @@ class QubitOperator : public AbstractOperator {
                 std::vector<std::vector<double>> &newconfs) const override {
     assert(v.size() == nqubits_);
 
-    // connectors.resize(tochange_.size());
-    // connectors = tochange_;
-    //
-    // newconfs.clear();
-    // newconfs.resize(noperators_);
-    // mel.clear();
-    // mel.resize(noperators_);
-    //
-    // for (int i = 0; i < noperators_; i++) {
-    //   mel[i] = weights_[i];
-    //   for (auto j : zcheck_[i]) {
-    //     assert(j >= 0 && j < v.size());
-    //
-    //     if (int(std::round(v(j))) == 1) {
-    //       mel[i] *= -1.;
-    //     }
-    //   }
-    //   newconfs[i].resize(tochange_[i].size());
-    //   int j = 0;
-    //   for (auto sj : tochange_[i]) {
-    //     assert(sj < v.size() && sj >= 0);
-    //     if (int(std::round(v(sj))) == 0) {
-    //       newconfs[i][j] = 1;
-    //     } else {
-    //       newconfs[i][j] = 0;
-    //     }
-    //     j++;
-    //   }
-    // }
-
     connectors.resize(0);
     newconfs.clear();
     newconfs.resize(0);

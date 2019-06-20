@@ -11,14 +11,11 @@ machines = {}
 
 # TESTS FOR SPIN HILBERT
 # Constructing a 1d lattice
-g = nk.graph.Hypercube(length=4, n_dim=1)
+g = nk.graph.Hypercube(length=6, n_dim=1)
 
 # Hilbert space of spins from given graph
 hi = nk.hilbert.Spin(s=0.5, total_sz = 0, graph=g)
 
-machines["RbmSpin 1d Hypercube spin"] = nk.machine.AutoregressiveRealMachine(
-    hilbert=hi, alpha=1, total=2)
-machines["RbmSpin 1d Hypercube spin"].init_random_parameters(seed=1232, sigma=0.03)
 # machines["RbmSpin 1d Hypercube spin"].log_val([1,1,-1,-1])
 # machines["PairProductSinglet 1d Hypercube spin"] = nk.machine.PairProductSingletSymm(hilbert=hi)
 # summachines = (
@@ -32,8 +29,8 @@ machines["RbmSpin 1d Hypercube spin"].init_random_parameters(seed=1232, sigma=0.
 #
 # machines["PairProductSymm 1d Hypercube spin"] = nk.machine.PairProductSymm(hilbert=hi)
 #
-# machines["RbmSpin 1d Hypercube spin"] = nk.machine.RbmSpin(
-#     hilbert=hi, alpha=1)
+machines["RbmSpin 1d Hypercube spin"] = nk.machine.RbmSpinChem(
+    hilbert=hi, alpha=1)
 #
 # machines["RbmSpinSymm 1d Hypercube spin"] = nk.machine.RbmSpinSymm(
 #     hilbert=hi, alpha=2)
