@@ -37,22 +37,29 @@ class ProductMachine : public AbstractMachine {
   int npar_;
   int ntrain_;
   int nv_;
+  VectorType weights_;
 
   std::vector<std::unique_ptr<LookupType>> lookup_;
 
  public:
   explicit ProductMachine(const AbstractHilbert &hilbert,
                           std::vector<AbstractMachine *> machines,
-                          std::vector<bool> trainable)
+                          std::vector<bool> trainable, VectorType weights)
       : hilbert_(hilbert),
         machines_(std::move(machines)),
         trainable_(std::move(trainable)),
+        weights_(weights),
         nv_(hilbert.Size()) {
     Init();
   }
 
   void Init() {
     nmachine_ = machines_.size();
+    if (weights_.size() < nmachine_) {
+      weights_.resize(nmachine_);
+      weights_.setConstant(1.0);
+    }
+    // std::cout << weights_ << std::endl;
 
     std::string buffer = "";
     // Check that each machine takes same number of inputs
@@ -101,7 +108,7 @@ class ProductMachine : public AbstractMachine {
           "Field (Machines) not defined for Machine (ProductMachine) in "
           "initfile");
     }
-
+    weights_ = pars["Weights"];
     for (int i = 0; i < nmachine_; ++i) {
       machines_[i]->from_json(machine_par[i]);
     }
@@ -159,7 +166,7 @@ class ProductMachine : public AbstractMachine {
   Complex LogVal(VisibleConstType v) override {
     Complex sum = 0.0;
     for (int i = 0; i < nmachine_; ++i) {
-      sum += machines_[i]->LogVal(v);
+      sum += weights_(i) * machines_[i]->LogVal(v);
     }
     return sum;
   }
@@ -167,7 +174,7 @@ class ProductMachine : public AbstractMachine {
   Complex LogVal(VisibleConstType v, const LookupType &lt) override {
     Complex sum = 0.0;
     for (int i = 0; i < nmachine_; ++i) {
-      sum += machines_[i]->LogVal(v, *(lt.lookups_[i]));
+      sum += weights_(i) * machines_[i]->LogVal(v, *(lt.lookups_[i]));
     }
     return sum;
   }
@@ -178,7 +185,7 @@ class ProductMachine : public AbstractMachine {
     for (auto i : totrain_) {
       int num_of_pars = machines_[i]->Npar();
       der.segment(start_idx, num_of_pars) =
-          machines_[i]->DerLog(v, *(lt.lookups_[i]));
+          weights_(i) * machines_[i]->DerLog(v, *(lt.lookups_[i]));
       start_idx += num_of_pars;
     }
     return der;
@@ -189,7 +196,8 @@ class ProductMachine : public AbstractMachine {
     int start_idx = 0;
     for (auto i : totrain_) {
       int num_of_pars = machines_[i]->Npar();
-      der.segment(start_idx, num_of_pars) = machines_[i]->DerLog(v);
+      der.segment(start_idx, num_of_pars) =
+          weights_(i) * machines_[i]->DerLog(v);
       start_idx += num_of_pars;
     }
     return der;
@@ -202,7 +210,8 @@ class ProductMachine : public AbstractMachine {
     VectorType logvaldiffs = VectorType::Zero(nconn);
 
     for (int i = 0; i < nmachine_; ++i) {
-      logvaldiffs += machines_[i]->LogValDiff(v, tochange, newconf);
+      logvaldiffs +=
+          weights_(i) * machines_[i]->LogValDiff(v, tochange, newconf);
     }
     return logvaldiffs;
   }
@@ -212,7 +221,8 @@ class ProductMachine : public AbstractMachine {
                      const LookupType &lt) override {
     Complex lvd = 0.0;
     for (int i = 0; i < nmachine_; ++i) {
-      lvd += machines_[i]->LogValDiff(v, tochange, newconf, *(lt.lookups_[i]));
+      lvd += weights_(i) *
+             machines_[i]->LogValDiff(v, tochange, newconf, *(lt.lookups_[i]));
     }
     return lvd;
   }
@@ -220,6 +230,7 @@ class ProductMachine : public AbstractMachine {
   void to_json(json &j) const override {
     j["Name"] = "ProductMachine";
     j["Machines"] = {};
+    j["Weights"] = weights_;
     for (int i = 0; i < nmachine_; ++i) {
       json jmachine;
       machines_[i]->to_json(jmachine);

@@ -34,17 +34,18 @@ void AddProductMachine(py::module &subm) {
     py::class_<ProductMachine, AbstractMachine>(subm, "ProductMachine", R"EOF(
              A machine which is the (log sum) of other machines i.e.
              it represents the product of wavefunctions.)EOF")
-        .def(py::init([](AbstractHilbert const &hi, py::tuple tuple,
-                         py::tuple tuple2) {
-               auto machines = py::cast<std::vector<AbstractMachine *>>(tuple);
-               auto trainable = py::cast<std::vector<bool>>(tuple2);
-               return ProductMachine{hi, std::move(machines),
-                                     std::move(trainable)};
-             }),
-             py::keep_alive<1, 2>(), py::keep_alive<1, 3>(),
-             py::keep_alive<1, 4>(), py::arg("hilbert"), py::arg("machines"),
-             py::arg("trainable"),
-             R"EOF(
+        .def(
+            py::init([](AbstractHilbert const &hi, py::tuple tuple,
+                        py::tuple tuple2, AbstractMachine::VectorType weights) {
+              auto machines = py::cast<std::vector<AbstractMachine *>>(tuple);
+              auto trainable = py::cast<std::vector<bool>>(tuple2);
+              return ProductMachine{hi, std::move(machines),
+                                    std::move(trainable), std::move(weights)};
+            }),
+            py::keep_alive<1, 2>(), py::keep_alive<1, 3>(),
+            py::keep_alive<1, 4>(), py::arg("hilbert"), py::arg("machines"),
+            py::arg("trainable"), py::arg("weights"),
+            R"EOF(
               Constructs a new ``SumMachine`` machine:
 
               Args:
