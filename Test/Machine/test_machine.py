@@ -18,19 +18,19 @@ hi = nk.hilbert.Spin(s=0.5, total_sz = 0, graph=g)
 
 # machines["RbmSpin 1d Hypercube spin"].log_val([1,1,-1,-1])
 # machines["PairProductSinglet 1d Hypercube spin"] = nk.machine.PairProductSingletSymm(hilbert=hi)
-# summachines = (
-#     nk.machine.RbmSpinSymm(hilbert=hi, alpha=1),
-#     nk.machine.RbmSpinSymm(hilbert=hi, alpha=1)
-# )
-# trainable = (True,True)
-# machines["Sum Machine"] = nk.machine.SumMachine(hilbert=hi, machines=summachines, trainable=trainable)
+summachines = (
+    nk.machine.RbmSpinSymm(hilbert=hi, alpha=1),
+    nk.machine.RbmSpinSymm(hilbert=hi, alpha=1)
+)
+trainable = (True,True)
+machines["Sum Machine"] = nk.machine.SumMachine(hilbert=hi, machines=summachines, trainable=trainable, weights=[2,1])
 # machines["Sum Machine"].init_random_parameters(seed=1232, sigma=0.03)
 # machines["PairProduct 1d Hypercube spin"] = nk.machine.PairProduct(hilbert=hi)
 #
 # machines["PairProductSymm 1d Hypercube spin"] = nk.machine.PairProductSymm(hilbert=hi)
 #
-machines["RbmSpin 1d Hypercube spin"] = nk.machine.RbmSpinChem(
-    hilbert=hi, alpha=1)
+# machines["RbmSpin 1d Hypercube spin"] = nk.machine.RbmSpinChem(
+#     hilbert=hi, alpha=1)
 #
 # machines["RbmSpinSymm 1d Hypercube spin"] = nk.machine.RbmSpinSymm(
 #     hilbert=hi, alpha=2)

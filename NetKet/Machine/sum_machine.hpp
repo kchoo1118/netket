@@ -38,21 +38,28 @@ class SumMachine : public AbstractMachine {
   int ntrain_;
   int nv_;
 
+  VectorType weights_;
   std::vector<std::unique_ptr<LookupType>> lookup_;
 
  public:
   explicit SumMachine(const AbstractHilbert &hilbert,
                       std::vector<AbstractMachine *> machines,
-                      std::vector<bool> trainable)
+                      std::vector<bool> trainable, VectorType weights)
       : hilbert_(hilbert),
         machines_(std::move(machines)),
         trainable_(std::move(trainable)),
+        weights_(weights_),
         nv_(hilbert.Size()) {
     Init();
   }
 
   void Init() {
     nmachine_ = machines_.size();
+    if (weights_.size() < nmachine_) {
+      weights_.resize(nmachine_);
+      weights_.setConstant(1.0);
+      // std::fill(weights_.begin(), weights_.end(), 1.0);
+    }
 
     std::string buffer = "";
     // Check that each machine takes same number of inputs
@@ -78,6 +85,7 @@ class SumMachine : public AbstractMachine {
     for (int i = 0; i < nmachine_; ++i) {
       if (trainable_[i]) {
         npar_ += machines_[i]->Npar();
+        npar_ += 1;
         totrain_.push_back(i);
       }
     }
@@ -101,7 +109,7 @@ class SumMachine : public AbstractMachine {
       throw InvalidInputError(
           "Field (Machines) not defined for Machine (SumMachine) in initfile");
     }
-
+    weights_ = pars["Weights"];
     for (int i = 0; i < nmachine_; ++i) {
       machines_[i]->from_json(machine_par[i]);
     }
@@ -118,6 +126,8 @@ class SumMachine : public AbstractMachine {
       int num_of_pars = machines_[i]->Npar();
       pars.segment(start_idx, num_of_pars) = machines_[i]->GetParameters();
       start_idx += num_of_pars;
+      pars(start_idx) = weights_(i);
+      start_idx += 1;
     }
     return pars;
   }
@@ -128,6 +138,8 @@ class SumMachine : public AbstractMachine {
       int num_of_pars = machines_[i]->Npar();
       machines_[i]->SetParameters(pars.segment(start_idx, num_of_pars));
       start_idx += num_of_pars;
+      weights_(i) = pars(start_idx);
+      start_idx += 1;
     }
   }
 
@@ -187,15 +199,15 @@ class SumMachine : public AbstractMachine {
   }
 
   inline Complex LogSum(VectorType &lv) {
-    Complex val = lv(0);
+    Complex val = lv(0) + std::log(weights_(0));
     for (int i = 1; i < nmachine_; ++i) {
-      auto ratio = std::exp(lv(i) - val);
+      auto ratio = std::exp(lv(i) - val + std::log(weights_(i)));
       if (std::abs(ratio) < 1.0e4) {
         val = val + std::log(1. + ratio);
         assert(!std::isnan(std::abs(val)));
       } else {
-        ratio = std::exp(val - lv(i));
-        val = lv(i) + std::log(1. + ratio);
+        ratio = std::exp(val - lv(i) - std::log(weights_(i)));
+        val = std::log(weights_(i)) + lv(i) + std::log(1. + ratio);
         assert(!std::isnan(std::abs(val)));
       }
     }
@@ -209,9 +221,11 @@ class SumMachine : public AbstractMachine {
     for (auto i : totrain_) {
       int num_of_pars = machines_[i]->Npar();
       der.segment(start_idx, num_of_pars) =
-          (std::exp(lt.V(0)(i)) / lv) *
+          (weights_(i) * std::exp(lt.V(0)(i)) / lv) *
           machines_[i]->DerLog(v, *(lt.lookups_[i]));
       start_idx += num_of_pars;
+      der(start_idx) = (std::exp(lt.V(0)(i)) / lv);
+      start_idx += 1;
     }
     return der;
   }
@@ -254,6 +268,7 @@ class SumMachine : public AbstractMachine {
 
   void to_json(json &j) const override {
     j["Name"] = "SumMachine";
+    j["Weights"] = weights_;
     j["Machines"] = {};
     for (int i = 0; i < nmachine_; ++i) {
       json jmachine;
