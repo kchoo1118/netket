@@ -22,5 +22,6 @@
 #include "exact_diagonalization.hpp"
 #include "imaginary_time.hpp"
 #include "variational_montecarlo.hpp"
+#include "variational_montecarlo_bias.hpp"
 
 #endif

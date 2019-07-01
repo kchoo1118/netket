@@ -39,6 +39,8 @@ class AbstractSampler {
 
   virtual const AbstractHilbert& GetHilbert() const noexcept = 0;
 
+  virtual double LogWeight() const { return 0; }
+
   virtual ~AbstractSampler() {}
 
   void Seed(DistributedRandomEngine::ResultType base_seed) {

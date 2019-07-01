@@ -34,6 +34,7 @@
 #include "py_exact_sampler.hpp"
 #include "py_metropolis_exchange.hpp"
 #include "py_metropolis_exchange_chemistry.hpp"
+#include "py_metropolis_exchange_chemistry_bias.hpp"
 #include "py_metropolis_exchange_pt.hpp"
 #include "py_metropolis_hamiltonian.hpp"
 #include "py_metropolis_hamiltonian_pt.hpp"
@@ -104,6 +105,7 @@ void AddSamplerModule(py::module &m) {
   AddMetropolisHamiltonianPt(subm);
   AddMetropolisExchange(subm);
   AddMetropolisExchangeChemistry(subm);
+  AddMetropolisExchangeChemistryBias(subm);
   AddMetropolisExchangePt(subm);
   AddExactSampler(subm);
   AddCustomSampler(subm);

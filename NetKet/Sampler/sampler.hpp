@@ -28,6 +28,7 @@
 #include "exact_sampler.hpp"
 #include "metropolis_exchange.hpp"
 #include "metropolis_exchange_chemistry.hpp"
+#include "metropolis_exchange_chemistry_bias.hpp"
 #include "metropolis_exchange_pt.hpp"
 #include "metropolis_hamiltonian.hpp"
 #include "metropolis_hamiltonian_pt.hpp"
