@@ -23,8 +23,8 @@ summachines = (
     nk.machine.RbmSpinSymm(hilbert=hi, alpha=1)
 )
 trainable = (True,True)
-machines["Product Machine"] = nk.machine.ProductMachine(hilbert=hi, machines=summachines, trainable=trainable, weights=[2,1])
-# machines["Sum Machine"].init_random_parameters(seed=1232, sigma=0.03)
+machines["Sum Machine"] = nk.machine.SumMachine(hilbert=hi, machines=summachines, trainable=trainable, weights=[2,1])
+machines["Sum Machine"].init_random_parameters(seed=1232, sigma=0.03)
 # machines["PairProduct 1d Hypercube spin"] = nk.machine.PairProduct(hilbert=hi)
 #
 # machines["PairProductSymm 1d Hypercube spin"] = nk.machine.PairProductSymm(hilbert=hi)

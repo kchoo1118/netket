@@ -48,7 +48,7 @@ class SumMachine : public AbstractMachine {
       : hilbert_(hilbert),
         machines_(std::move(machines)),
         trainable_(std::move(trainable)),
-        weights_(weights_),
+        weights_(weights),
         nv_(hilbert.Size()) {
     Init();
   }
