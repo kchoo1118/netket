@@ -69,6 +69,8 @@ class MetropolisExchangeChemistry : public AbstractSampler {
   int njumps_;
   bool particlehole_;
 
+  int sweepsize_;
+
  public:
   MetropolisExchangeChemistry(AbstractMachine &psi, H &hamiltonian, int npar,
                               int njumps, std::string mapping,
@@ -89,6 +91,8 @@ class MetropolisExchangeChemistry : public AbstractSampler {
   }
 
   void Init() {
+    sweepsize_ = nv_;
+
     v_.resize(nv_);
     vjw_.resize(nv_);
 
@@ -244,7 +248,7 @@ class MetropolisExchangeChemistry : public AbstractSampler {
       std::uniform_real_distribution<double> distu;
       std::vector<double> newconf;
 
-      for (int i = 0; i < std::max(1., 1. / acceptancead_) * nv_; i++) {
+      for (int i = 0; i < std::max(1., 1. / acceptancead_) * sweepsize_; i++) {
         h_.FindConn(v_, mel_, tochange_, newconfs_);
         std::vector<double> melabs(mel_.size());
         for (int j = 0; j < mel_.size(); ++j) {
@@ -289,7 +293,7 @@ class MetropolisExchangeChemistry : public AbstractSampler {
 
       std::vector<double> newconf;
 
-      for (int i = 0; i < nv_; i++) {
+      for (int i = 0; i < sweepsize_; i++) {
         int nflips = distnumber(rgen_);
         Eigen::VectorXd vjwt = vjw_;
 
@@ -367,6 +371,9 @@ class MetropolisExchangeChemistry : public AbstractSampler {
       }
     }
   }
+
+  void SetSweepSize(int sweepsize) { sweepsize_ = sweepsize; }
+  int SweepSize() { return sweepsize_; }
 
   Eigen::VectorXd Visible() override { return v_; }
 
