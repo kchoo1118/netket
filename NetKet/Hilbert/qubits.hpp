@@ -82,6 +82,14 @@ class Qubit : public AbstractHilbert {
 
   int Size() const override { return nqubits_; }
 
+  double Constraint() const override {
+    if (constraintUp_) {
+      return totalUp_;
+    } else {
+      return -1;
+    }
+  }
+
   std::vector<double> LocalStates() const override { return local_; }
 
   void RandomVals(Eigen::Ref<Eigen::VectorXd> state,

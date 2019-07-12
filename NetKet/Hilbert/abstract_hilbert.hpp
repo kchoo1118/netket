@@ -50,6 +50,8 @@ class AbstractHilbert {
   */
   virtual int Size() const = 0;
 
+  virtual double Constraint() const { return -1; }
+
   /**
   Member function returning the local states.
   @return Vector containing the value of the discrete local quantum numbers. If

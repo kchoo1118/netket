@@ -51,6 +51,7 @@ class ExactSampler : public AbstractSampler {
 
   std::vector<Complex> logpsivals_;
   std::vector<double> psivals_;
+  std::vector<int> index_;
 
  public:
   explicit ExactSampler(AbstractMachine& psi)
@@ -88,17 +89,25 @@ class ExactSampler : public AbstractSampler {
     }
 
     double logmax = -std::numeric_limits<double>::infinity();
-
-    logpsivals_.resize(dim_);
-    psivals_.resize(dim_);
-
+    logpsivals_.resize(0);
+    index_.resize(0);
     for (int i = 0; i < dim_; ++i) {
       auto v = hilbert_index_.NumberToState(i);
-      logpsivals_[i] = psi_.LogVal(v);
-      logmax = std::max(logmax, std::real(logpsivals_[i]));
+      if (hilbert_.Constraint() < 0) {
+        logpsivals_.push_back(psi_.LogVal(v));
+        index_.push_back(i);
+        logmax = std::max(logmax, std::real(logpsivals_.back()));
+      } else {
+        if ((v.sum() < (hilbert_.Constraint() + 0.01)) &&
+            (v.sum() > (hilbert_.Constraint() - 0.01))) {
+          logpsivals_.push_back(psi_.LogVal(v));
+          index_.push_back(i);
+          logmax = std::max(logmax, std::real(logpsivals_.back()));
+        }
+      }
     }
-
-    for (int i = 0; i < dim_; ++i) {
+    psivals_.resize(logpsivals_.size());
+    for (int i = 0; i < logpsivals_.size(); ++i) {
       psivals_[i] = std::norm(std::exp(logpsivals_[i] - logmax));
     }
 
@@ -110,7 +119,7 @@ class ExactSampler : public AbstractSampler {
 
   void Sweep() override {
     int newstate = dist_(this->GetRandomEngine());
-    v_ = hilbert_index_.NumberToState(newstate);
+    v_ = hilbert_index_.NumberToState(index_[newstate]);
 
     accept_(0) += 1;
     moves_(0) += 1;
