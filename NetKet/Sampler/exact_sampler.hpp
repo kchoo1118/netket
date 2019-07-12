@@ -17,6 +17,7 @@
 
 #include <mpi.h>
 #include <Eigen/Dense>
+#include <algorithm>
 #include <iostream>
 #include <limits>
 #include "Utils/parallel_utils.hpp"
@@ -46,12 +47,14 @@ class ExactSampler : public AbstractSampler {
   const HilbertIndex hilbert_index_;
 
   const int dim_;
+  int constraint_dim_;
 
   std::discrete_distribution<int> dist_;
 
-  std::vector<Complex> logpsivals_;
-  std::vector<double> psivals_;
+  Eigen::VectorXcd logpsivals_;
+  Eigen::VectorXd psivals_;
   std::vector<int> index_;
+  int division_;
 
  public:
   explicit ExactSampler(AbstractMachine& psi)
@@ -69,6 +72,27 @@ class ExactSampler : public AbstractSampler {
     MPI_Comm_size(MPI_COMM_WORLD, &totalnodes_);
     MPI_Comm_rank(MPI_COMM_WORLD, &mynode_);
 
+    // Get all relevant states
+    index_.resize(0);
+    for (int i = 0; i < dim_; ++i) {
+      auto v = hilbert_index_.NumberToState(i);
+      if (hilbert_.Constraint() < 0) {
+        index_.push_back(i);
+      } else {
+        if ((v.sum() < (hilbert_.Constraint() + 0.01)) &&
+            (v.sum() > (hilbert_.Constraint() - 0.01))) {
+          index_.push_back(i);
+        }
+      }
+    }
+    constraint_dim_ = index_.size();
+    logpsivals_.resize(constraint_dim_);
+    psivals_.resize(constraint_dim_);
+    logpsivals_.setZero();
+    psivals_.setZero();
+
+    // Divide among node
+    division_ = (int)(constraint_dim_ / totalnodes_) + 2;
     if (!hilbert_.IsDiscrete()) {
       throw InvalidInputError(
           "Exact sampler works only for discrete "
@@ -87,34 +111,28 @@ class ExactSampler : public AbstractSampler {
     if (initrandom) {
       hilbert_.RandomVals(v_, this->GetRandomEngine());
     }
+    psivals_.setZero();
 
     double logmax = -std::numeric_limits<double>::infinity();
-    logpsivals_.resize(0);
-    index_.resize(0);
-    for (int i = 0; i < dim_; ++i) {
-      auto v = hilbert_index_.NumberToState(i);
-      if (hilbert_.Constraint() < 0) {
-        logpsivals_.push_back(psi_.LogVal(v));
-        index_.push_back(i);
-        logmax = std::max(logmax, std::real(logpsivals_.back()));
-      } else {
-        if ((v.sum() < (hilbert_.Constraint() + 0.01)) &&
-            (v.sum() > (hilbert_.Constraint() - 0.01))) {
-          logpsivals_.push_back(psi_.LogVal(v));
-          index_.push_back(i);
-          logmax = std::max(logmax, std::real(logpsivals_.back()));
-        }
-      }
+    for (int i = mynode_ * division_;
+         i < std::min(constraint_dim_, (mynode_ + 1) * division_); ++i) {
+      auto v = hilbert_index_.NumberToState(index_[i]);
+      logpsivals_(i) = psi_.LogVal(v);
+      logmax = std::max(logmax, std::real(logpsivals_(i)));
     }
-    psivals_.resize(logpsivals_.size());
-    for (int i = 0; i < logpsivals_.size(); ++i) {
-      psivals_[i] = std::norm(std::exp(logpsivals_[i] - logmax));
-    }
+    MaxOnNodes(logmax);
 
-    dist_ = std::discrete_distribution<int>(psivals_.begin(), psivals_.end());
+    for (int i = mynode_ * division_;
+         i < std::min(constraint_dim_, (mynode_ + 1) * division_); ++i) {
+      psivals_(i) = std::norm(std::exp(logpsivals_(i) - logmax));
+    }
+    SumOnNodes(psivals_);
+    dist_ = std::discrete_distribution<int>(psivals_.data(),
+                                            psivals_.data() + constraint_dim_);
 
     accept_ = Eigen::VectorXd::Zero(1);
     moves_ = Eigen::VectorXd::Zero(1);
+    MPI_Barrier(MPI_COMM_WORLD);
   }
 
   void Sweep() override {
