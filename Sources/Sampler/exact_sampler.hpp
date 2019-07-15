@@ -17,6 +17,7 @@
 
 #include <mpi.h>
 #include <Eigen/Dense>
+#include <cmath>
 #include <iostream>
 #include <limits>
 #include "Utils/parallel_utils.hpp"
@@ -45,8 +46,10 @@ class ExactSampler : public AbstractSampler {
 
   std::discrete_distribution<int> dist_;
 
-  std::vector<Complex> logpsivals_;
-  std::vector<double> psivals_;
+  Eigen::VectorXcd logpsivals_;
+  Eigen::VectorXd psivals_;
+
+  int states_per_node_;
 
  public:
   explicit ExactSampler(AbstractMachine& psi)
@@ -62,6 +65,8 @@ class ExactSampler : public AbstractSampler {
 
     MPI_Comm_size(MPI_COMM_WORLD, &totalnodes_);
     MPI_Comm_rank(MPI_COMM_WORLD, &mynode_);
+
+    states_per_node_ = (int)(std::ceil(dim_ / totalnodes_));
 
     if (!GetHilbert().IsDiscrete()) {
       throw InvalidInputError(
@@ -86,18 +91,29 @@ class ExactSampler : public AbstractSampler {
 
     logpsivals_.resize(dim_);
     psivals_.resize(dim_);
+    logpsivals_.setZero();
+    psivals_.setZero();
 
-    for (int i = 0; i < dim_; ++i) {
+    int count = 0;
+    for (int i = mynode_ * states_per_node_;
+         i < std::min(dim_, (mynode_ + 1) * states_per_node_); ++i) {
       auto v = hilbert_index_.NumberToState(i);
-      logpsivals_[i] = GetMachine().LogVal(v);
-      logmax = std::max(logmax, std::real(logpsivals_[i]));
+      logpsivals_(i) = GetMachine().LogVal(v);
+      logmax = std::max(logmax, std::real(logpsivals_(i)));
+      ++count;
     }
+    MaxOnNodes(logmax);
+    SumOnNodes(count);
+    assert(count == dim_);
 
-    for (int i = 0; i < dim_; ++i) {
-      psivals_[i] = this->GetMachineFunc()(std::exp(logpsivals_[i] - logmax));
+    for (int i = mynode_ * states_per_node_;
+         i < std::min(dim_, (mynode_ + 1) * states_per_node_); ++i) {
+      psivals_(i) = this->GetMachineFunc()(std::exp(logpsivals_(i) - logmax));
     }
+    SumOnNodes(psivals_);
 
-    dist_ = std::discrete_distribution<int>(psivals_.begin(), psivals_.end());
+    dist_ = std::discrete_distribution<int>(psivals_.data(),
+                                            psivals_.data() + dim_);
 
     accept_ = Eigen::VectorXd::Zero(1);
     moves_ = Eigen::VectorXd::Zero(1);

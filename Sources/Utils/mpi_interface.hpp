@@ -72,6 +72,10 @@ inline void SendToAll(Eigen::VectorXcd &value, int root = 0,
   MPI_Bcast(value.data(), value.size(), MPI_DOUBLE_COMPLEX, root, comm);
 }
 
+inline void MaxOnNodes(double &value, const MPI_Comm comm = MPI_COMM_WORLD) {
+  MPI_Allreduce(MPI_IN_PLACE, &value, 1, MPI_DOUBLE, MPI_MAX, comm);
+}
+
 // Accumulates the sum of val collected from all nodes and the sum is
 // distributed back to all processors
 inline void SumOnNodes(double &val, double &sum,
