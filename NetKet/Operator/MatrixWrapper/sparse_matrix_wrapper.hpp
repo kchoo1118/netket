@@ -33,7 +33,7 @@ class SparseMatrixWrapper : public AbstractMatrixWrapper<State> {
   Matrix matrix_;
   int dim_;
 
-public:
+ public:
   explicit SparseMatrixWrapper(const AbstractOperator &the_operator) {
     InitializeMatrix(the_operator);
   }
@@ -65,12 +65,12 @@ public:
    * @return An instance of Eigen::SelfAdjointEigenSolver initialized with the
    * wrapped operator and options.
    */
-  Eigen::SelfAdjointEigenSolver<Matrix>
-  ComputeEigendecomposition(int options = Eigen::ComputeEigenvectors) const {
+  Eigen::SelfAdjointEigenSolver<Matrix> ComputeEigendecomposition(
+      int options = Eigen::ComputeEigenvectors) const {
     return Eigen::SelfAdjointEigenSolver<Matrix>(matrix_, options);
   }
 
-private:
+ private:
   void InitializeMatrix(const AbstractOperator &the_operator) {
     const auto &hilbert = the_operator.GetHilbert();
     const HilbertIndex hilbert_index(hilbert);
@@ -87,8 +87,8 @@ private:
     for (int i = 0; i < dim_; ++i) {
       const auto v = hilbert_index.NumberToState(i);
       the_operator.ForEachConn(v, [&](ConnectorRef conn) {
-        const auto j = i + hilbert_index.DeltaStateToNumber(v, conn.tochange,
-                                                            conn.newconf);
+        const auto j =
+            hilbert_index.DeltaStateToNumber(v, conn.tochange, conn.newconf);
         tripletList.push_back(Triplet(i, j, conn.mel));
       });
     }
@@ -98,6 +98,6 @@ private:
   }
 };
 
-} // namespace netket
+}  // namespace netket
 
-#endif // NETKET_SPARSE_HAMILTONIAN_OPERATOR_HH
+#endif  // NETKET_SPARSE_HAMILTONIAN_OPERATOR_HH

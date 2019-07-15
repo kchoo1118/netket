@@ -76,13 +76,8 @@ class ExactSampler : public AbstractSampler {
     index_.resize(0);
     for (int i = 0; i < dim_; ++i) {
       auto v = hilbert_index_.NumberToState(i);
-      if (hilbert_.Constraint() < 0) {
+      if (hilbert_.InHilbertSpace(v)) {
         index_.push_back(i);
-      } else {
-        if ((v.sum() < (hilbert_.Constraint() + 0.01)) &&
-            (v.sum() > (hilbert_.Constraint() - 0.01))) {
-          index_.push_back(i);
-        }
       }
     }
     constraint_dim_ = index_.size();
@@ -92,7 +87,7 @@ class ExactSampler : public AbstractSampler {
     psivals_.setZero();
 
     // Divide among node
-    division_ = (int)(constraint_dim_ / totalnodes_) + 2;
+    division_ = (int)(std::ceil(constraint_dim_ / totalnodes_) + 0.5);
     if (!hilbert_.IsDiscrete()) {
       throw InvalidInputError(
           "Exact sampler works only for discrete "
@@ -114,13 +109,17 @@ class ExactSampler : public AbstractSampler {
     psivals_.setZero();
 
     double logmax = -std::numeric_limits<double>::infinity();
+    int count = 0;
     for (int i = mynode_ * division_;
          i < std::min(constraint_dim_, (mynode_ + 1) * division_); ++i) {
       auto v = hilbert_index_.NumberToState(index_[i]);
       logpsivals_(i) = psi_.LogVal(v);
       logmax = std::max(logmax, std::real(logpsivals_(i)));
+      ++count;
     }
     MaxOnNodes(logmax);
+    SumOnNodes(count);
+    assert(count == constraint_dim_);
 
     for (int i = mynode_ * division_;
          i < std::min(constraint_dim_, (mynode_ + 1) * division_); ++i) {

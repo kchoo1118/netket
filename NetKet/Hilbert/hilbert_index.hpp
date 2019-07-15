@@ -40,13 +40,20 @@ class HilbertIndex {
 
   std::vector<std::size_t> basis_;
 
+  int nstates_full_;
   int nstates_;
+
+  const AbstractHilbert &hilbert_;
+
+  std::unordered_map<std::size_t, std::size_t> hash_table_;
+  std::unordered_map<std::size_t, std::size_t> hash_table_reverse_;
 
  public:
   explicit HilbertIndex(const AbstractHilbert &hilbert)
       : localstates_(hilbert.LocalStates()),
         localsize_(hilbert.LocalSize()),
-        size_(hilbert.Size()) {
+        size_(hilbert.Size()),
+        hilbert_(hilbert) {
     Init();
   }
 
@@ -55,7 +62,7 @@ class HilbertIndex {
       throw InvalidInputError("Hilbert space is too large to be indexed");
     }
 
-    nstates_ = std::pow(localsize_, size_);
+    nstates_full_ = std::pow(localsize_, size_);
 
     std::size_t ba = 1;
     for (int s = 0; s < size_; s++) {
@@ -66,6 +73,17 @@ class HilbertIndex {
     for (std::size_t k = 0; k < localstates_.size(); k++) {
       statenumber_[localstates_[k]] = k;
     }
+
+    std::size_t count = 0;
+    for (std::size_t i = 0; i < nstates_full_; ++i) {
+      Eigen::VectorXd v = BareNumberToState(i);
+      if (hilbert_.InHilbertSpace(v)) {
+        hash_table_[count] = i;
+        hash_table_reverse_[i] = count;
+        ++count;
+      }
+    }
+    nstates_ = count;
   }
 
   // converts a vector of quantum numbers into the unique integer identifier
@@ -77,7 +95,7 @@ class HilbertIndex {
       number += statenumber_.at(v(size_ - i - 1)) * basis_[i];
     }
 
-    return number;
+    return hash_table_reverse_.at(number);
   }
 
   // converts a vector of quantum numbers into the unique integer identifier
@@ -87,20 +105,18 @@ class HilbertIndex {
                                  nonstd::span<const int> connector,
                                  nonstd::span<const double> newconf) const {
     std::size_t number = 0;
-
-    for (int k = 0; k < connector.size(); k++) {
-      const int ich = connector[k];
-      assert(statenumber_.count(v(ich)) > 0);
-      assert(statenumber_.count(newconf[k]) > 0);
-      number -= statenumber_.at(v(ich)) * basis_[size_ - ich - 1];
-      number += statenumber_.at(newconf[k]) * basis_[size_ - ich - 1];
+    Eigen::VectorXd vnew = v;
+    int i = 0;
+    for (auto sf : connector) {
+      vnew(sf) = newconf[i];
+      i++;
     }
 
-    return number;
+    return StateToNumber(vnew);
   }
 
   // converts an integer into a vector of quantum numbers
-  Eigen::VectorXd NumberToState(std::size_t i) const {
+  Eigen::VectorXd BareNumberToState(std::size_t i) const {
     Eigen::VectorXd result = Eigen::VectorXd::Constant(size_, localstates_[0]);
 
     std::size_t ip = i;
@@ -114,6 +130,11 @@ class HilbertIndex {
       k--;
     }
     return result;
+  }
+
+  // converts an integer into a vector of quantum numbers
+  Eigen::VectorXd NumberToState(std::size_t i) const {
+    return BareNumberToState(hash_table_.at(i));
   }
 
   std::size_t NStates() const { return nstates_; }

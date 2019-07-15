@@ -50,7 +50,9 @@ class AbstractHilbert {
   */
   virtual int Size() const = 0;
 
-  virtual double Constraint() const { return -1; }
+  virtual bool InHilbertSpace(Eigen::Ref<Eigen::VectorXd> v) const {
+    return true;
+  }
 
   /**
   Member function returning the local states.

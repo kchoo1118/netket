@@ -82,12 +82,33 @@ class Qubit : public AbstractHilbert {
 
   int Size() const override { return nqubits_; }
 
-  double Constraint() const override {
-    if (constraintUp_) {
-      return totalUp_;
+  bool InHilbertSpace(Eigen::Ref<Eigen::VectorXd> v) const override {
+    if (CheckLength(v) && CheckConstraint(v) && CheckLocal(v)) {
+      return true;
     } else {
-      return -1;
+      return false;
     }
+  }
+
+  bool CheckLength(const Eigen::Ref<Eigen::VectorXd> v) const {
+    return ((int)(v.size()) == nqubits_);
+  }
+
+  bool CheckConstraint(const Eigen::Ref<Eigen::VectorXd> v) const {
+    if (constraintUp_) {
+      return ((v.sum() < (totalUp_ + 0.01)) && (v.sum() > (totalUp_ - 0.01)));
+    } else {
+      return true;
+    }
+  }
+
+  bool CheckLocal(const Eigen::Ref<Eigen::VectorXd> v) const {
+    for (int i = 0; i < (int)(v.size()); ++i) {
+      if (std::find(local_.begin(), local_.end(), v(i)) == local_.end()) {
+        return false;
+      }
+    }
+    return true;
   }
 
   std::vector<double> LocalStates() const override { return local_; }
