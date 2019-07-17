@@ -46,8 +46,12 @@ class ExactSampler : public AbstractSampler {
 
   std::discrete_distribution<int> dist_;
 
-  Eigen::VectorXcd logpsivals_;
-  Eigen::VectorXd psivals_;
+  // Eigen::VectorXcd logpsivals_;
+  // Eigen::VectorXd psivals_;
+
+  std::vector<Complex> logpsivals_;
+  std::vector<double> local_psivals_;
+  std::vector<double> psivals_;
 
   int states_per_node_;
 
@@ -89,31 +93,37 @@ class ExactSampler : public AbstractSampler {
 
     double logmax = -std::numeric_limits<double>::infinity();
 
-    logpsivals_.resize(dim_);
-    psivals_.resize(dim_);
-    logpsivals_.setZero();
-    psivals_.setZero();
+    logpsivals_.resize(states_per_node_);
+    local_psivals_.resize(states_per_node_);
+    psivals_.resize(states_per_node_ * totalnodes_);
+    // logpsivals_.setZero();
+    // psivals_.setZero();
 
     int count = 0;
+    int k = 0;
     for (int i = mynode_ * states_per_node_;
          i < std::min(dim_, (mynode_ + 1) * states_per_node_); ++i) {
       auto v = hilbert_index_.NumberToState(i);
-      logpsivals_(i) = GetMachine().LogVal(v);
-      logmax = std::max(logmax, std::real(logpsivals_(i)));
+      logpsivals_[k] = GetMachine().LogVal(v);
+      logmax = std::max(logmax, std::real(logpsivals_[k]));
       ++count;
+      ++k;
     }
     MaxOnNodes(logmax);
     SumOnNodes(count);
     assert(count == dim_);
-
+    k = 0;
     for (int i = mynode_ * states_per_node_;
          i < std::min(dim_, (mynode_ + 1) * states_per_node_); ++i) {
-      psivals_(i) = this->GetMachineFunc()(std::exp(logpsivals_(i) - logmax));
+      local_psivals_[k] =
+          this->GetMachineFunc()(std::exp(logpsivals_[k] - logmax));
+      ++k;
     }
-    SumOnNodes(psivals_);
-
-    dist_ = std::discrete_distribution<int>(psivals_.data(),
-                                            psivals_.data() + dim_);
+    MPI_Allgather(local_psivals_.data(), states_per_node_, MPI_DOUBLE,
+                  psivals_.data(), states_per_node_, MPI_DOUBLE,
+                  MPI_COMM_WORLD);
+    dist_ = std::discrete_distribution<int>(psivals_.begin(),
+                                            psivals_.begin() + dim_);
 
     accept_ = Eigen::VectorXd::Zero(1);
     moves_ = Eigen::VectorXd::Zero(1);
