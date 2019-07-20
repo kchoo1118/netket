@@ -34,18 +34,19 @@ void AddSumMachine(py::module &subm) {
     py::class_<SumMachine, AbstractMachine>(subm, "SumMachine", R"EOF(
              A machine which is the (log sum) of other machines i.e.
              it represents the product of wavefunctions.)EOF")
-        .def(
-            py::init([](AbstractHilbert const &hi, py::tuple tuple,
-                        py::tuple tuple2, AbstractMachine::VectorType weights) {
-              auto machines = py::cast<std::vector<AbstractMachine *>>(tuple);
-              auto trainable = py::cast<std::vector<bool>>(tuple2);
-              return SumMachine{hi, std::move(machines), std::move(trainable),
-                                std::move(weights)};
-            }),
-            py::keep_alive<1, 2>(), py::keep_alive<1, 3>(),
-            py::keep_alive<1, 4>(), py::arg("hilbert"), py::arg("machines"),
-            py::arg("trainable"), py::arg("weights"),
-            R"EOF(
+        .def(py::init([](AbstractHilbert const &hi, py::tuple tuple,
+                         py::tuple tuple2, AbstractMachine::VectorType weights,
+                         bool train_weights) {
+               auto machines = py::cast<std::vector<AbstractMachine *>>(tuple);
+               auto trainable = py::cast<std::vector<bool>>(tuple2);
+               return SumMachine{hi, std::move(machines), std::move(trainable),
+                                 std::move(weights), train_weights};
+             }),
+             py::keep_alive<1, 2>(), py::keep_alive<1, 3>(),
+             py::keep_alive<1, 4>(), py::arg("hilbert"), py::arg("machines"),
+             py::arg("trainable"), py::arg("weights"),
+             py::arg("train_weights") = false,
+             R"EOF(
               Constructs a new ``SumMachine`` machine:
 
               Args:

@@ -37,6 +37,7 @@ class SumMachine : public AbstractMachine {
   int npar_;
   int ntrain_;
   int nv_;
+  bool train_weights_;
 
   VectorType weights_;
   std::vector<std::unique_ptr<LookupType>> lookup_;
@@ -44,12 +45,14 @@ class SumMachine : public AbstractMachine {
  public:
   explicit SumMachine(const AbstractHilbert &hilbert,
                       std::vector<AbstractMachine *> machines,
-                      std::vector<bool> trainable, VectorType weights)
+                      std::vector<bool> trainable, VectorType weights,
+                      bool train_weights)
       : hilbert_(hilbert),
         machines_(std::move(machines)),
         trainable_(std::move(trainable)),
         weights_(weights),
-        nv_(hilbert.Size()) {
+        nv_(hilbert.Size()),
+        train_weights_(train_weights) {
     Init();
   }
 
@@ -58,7 +61,6 @@ class SumMachine : public AbstractMachine {
     if (weights_.size() < nmachine_) {
       weights_.resize(nmachine_);
       weights_.setConstant(1.0);
-      // std::fill(weights_.begin(), weights_.end(), 1.0);
     }
 
     std::string buffer = "";
@@ -85,7 +87,9 @@ class SumMachine : public AbstractMachine {
     for (int i = 0; i < nmachine_; ++i) {
       if (trainable_[i]) {
         npar_ += machines_[i]->Npar();
-        npar_ += 1;
+        if (train_weights_) {
+          npar_ += 1;
+        }
         totrain_.push_back(i);
       }
     }
@@ -201,14 +205,19 @@ class SumMachine : public AbstractMachine {
   inline Complex LogSum(VectorType &lv) {
     Complex val = lv(0) + std::log(weights_(0));
     for (int i = 1; i < nmachine_; ++i) {
-      auto ratio = std::exp(lv(i) - val + std::log(weights_(i)));
-      if (std::abs(ratio) < 1.0e4) {
-        val = val + std::log(1. + ratio);
-        assert(!std::isnan(std::abs(val)));
+      if (std::isinf(std::real(val)) || std::isinf(std::real(lv(i)))) {
+        val = std::real(val) < std::real(lv(i)) ? lv(i) + std::log(weights_(i))
+                                                : val;
       } else {
-        ratio = std::exp(val - lv(i) - std::log(weights_(i)));
-        val = std::log(weights_(i)) + lv(i) + std::log(1. + ratio);
-        assert(!std::isnan(std::abs(val)));
+        auto ratio = std::exp(lv(i) - val + std::log(weights_(i)));
+        if (std::abs(ratio) < 1.0e4) {
+          val = val + std::log(1. + ratio);
+          assert(!std::isnan(std::abs(val)));
+        } else {
+          ratio = std::exp(val - lv(i) - std::log(weights_(i)));
+          val = std::log(weights_(i)) + lv(i) + std::log(1. + ratio);
+          assert(!std::isnan(std::abs(val)));
+        }
       }
     }
     return val;
@@ -224,8 +233,10 @@ class SumMachine : public AbstractMachine {
           (weights_(i) * std::exp(lt.V(0)(i)) / lv) *
           machines_[i]->DerLog(v, *(lt.lookups_[i]));
       start_idx += num_of_pars;
-      der(start_idx) = (std::exp(lt.V(0)(i)) / lv);
-      start_idx += 1;
+      if (train_weights_) {
+        der(start_idx) = (std::exp(lt.V(0)(i)) / lv);
+        start_idx += 1;
+      }
     }
     return der;
   }

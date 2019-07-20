@@ -23,6 +23,7 @@
 #include "abstract_machine.hpp"
 #include "autoregressive_machine.hpp"
 #include "autoregressive_real_machine.hpp"
+#include "configuration.hpp"
 #include "ffnn.hpp"
 #include "jastrow.hpp"
 #include "jastrow_symm.hpp"
