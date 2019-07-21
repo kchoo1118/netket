@@ -76,7 +76,7 @@ class Configuration : public AbstractMachine {
       conf_to_amp_[configurations_[i]] = amplitudes_[i];
     }
 
-    InfoMessage() << "Configurational Wf Initizialized with"
+    InfoMessage() << "Configurational Wf Initizialized with "
                   << configurations_.size() << " configurations" << std::endl;
   }
 
