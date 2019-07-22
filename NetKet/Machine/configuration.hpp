@@ -49,7 +49,7 @@ class Configuration : public AbstractMachine {
   // number of visible units
   int nv_;
   const int npar_;
-  const int nconfs_;
+  int nconfs_;
 
   std::vector<RealVectorType> configurations_;
   std::vector<Complex> amplitudes_;
@@ -168,9 +168,26 @@ class Configuration : public AbstractMachine {
     return hilbert_;
   }
 
-  void to_json(json &j) const override { j["Name"] = "Configuration"; }
+  void to_json(json &j) const override {
+    j["Name"] = "Configuration";
+    // j["Nvisible"] = nv_;
+    // j["Configurations"] = configurations_;
+    // j["Amplitudes"] = amplitudes_;
+  }
 
-  void from_json(const json &pars) override {}
+  void from_json(const json &pars) override {
+    // std::string name = FieldVal<std::string>(pars, "Name");
+    // if (name != "Configuration") {
+    //   throw InvalidInputError(
+    //       "Error while constructing Configuration from input parameters");
+    // }
+    // configurations_ = pars["Configuration"];
+    // amplitudes_ = pars["Amplitudes"];
+    // nconfs_ = configurations_.size();
+    // conf_to_amp_.clear();
+    //
+    // Init();
+  }
 };
 
 }  // namespace netket

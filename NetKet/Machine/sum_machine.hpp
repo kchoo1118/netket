@@ -130,8 +130,10 @@ class SumMachine : public AbstractMachine {
       int num_of_pars = machines_[i]->Npar();
       pars.segment(start_idx, num_of_pars) = machines_[i]->GetParameters();
       start_idx += num_of_pars;
-      pars(start_idx) = weights_(i);
-      start_idx += 1;
+      if (train_weights_) {
+        pars(start_idx) = weights_(i);
+        start_idx += 1;
+      }
     }
     return pars;
   }
@@ -142,8 +144,10 @@ class SumMachine : public AbstractMachine {
       int num_of_pars = machines_[i]->Npar();
       machines_[i]->SetParameters(pars.segment(start_idx, num_of_pars));
       start_idx += num_of_pars;
-      weights_(i) = pars(start_idx);
-      start_idx += 1;
+      if (train_weights_) {
+        weights_(i) = pars(start_idx);
+        start_idx += 1;
+      }
     }
   }
 
