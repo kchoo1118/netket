@@ -185,7 +185,13 @@ class SumMachine : public AbstractMachine {
     for (int i = 0; i < nmachine_; ++i) {
       Complex diff =
           machines_[i]->LogValDiff(v, tochange, newconf, *(lt.lookups_[i]));
-      lt.V(0)(i) += diff;
+      if (std::isinf(std::abs(diff)) || std::isnan(std::abs(diff))) {
+        RealVectorType vnew = v;
+        hilbert_.UpdateConf(vnew, tochange, newconf);
+        lt.V(0)(i) = machines_[i]->LogVal(vnew);
+      } else {
+        lt.V(0)(i) += diff;
+      }
     }
     lt.V(1)(0) = LogSum(lt.V(0));
     // Update lookups of individual machines
@@ -274,6 +280,12 @@ class SumMachine : public AbstractMachine {
       for (int i = 0; i < nmachine_; ++i) {
         lv_new(i) = lt.V(0)(i) + machines_[i]->LogValDiff(v, tochange, newconf,
                                                           *(lt.lookups_[i]));
+        if (std::isinf(std::abs(lv_new(i))) ||
+            std::isnan(std::abs(lv_new(i)))) {
+          RealVectorType vnew = v;
+          hilbert_.UpdateConf(vnew, tochange, newconf);
+          lv_new(i) = machines_[i]->LogVal(vnew);
+        }
       }
       return LogSum(lv_new) - lt.V(1)(0);
     } else {
