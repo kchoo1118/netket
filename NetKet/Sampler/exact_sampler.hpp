@@ -47,7 +47,6 @@ class ExactSampler : public AbstractSampler {
   const HilbertIndex hilbert_index_;
 
   const int dim_;
-  int constraint_dim_;
 
   std::discrete_distribution<int> dist_;
 
@@ -73,21 +72,14 @@ class ExactSampler : public AbstractSampler {
     MPI_Comm_rank(MPI_COMM_WORLD, &mynode_);
 
     // Get all relevant states
-    index_.resize(0);
-    for (int i = 0; i < dim_; ++i) {
-      auto v = hilbert_index_.NumberToState(i);
-      if (hilbert_.InHilbertSpace(v)) {
-        index_.push_back(i);
-      }
-    }
-    constraint_dim_ = index_.size();
-    logpsivals_.resize(constraint_dim_);
-    psivals_.resize(constraint_dim_);
+
+    logpsivals_.resize(dim_);
+    psivals_.resize(dim_);
     logpsivals_.setZero();
     psivals_.setZero();
 
     // Divide among node
-    division_ = (int)(std::ceil(constraint_dim_ / totalnodes_) + 0.5);
+    division_ = (int)(std::ceil(dim_ / totalnodes_) + 0.5);
     if (!hilbert_.IsDiscrete()) {
       throw InvalidInputError(
           "Exact sampler works only for discrete "
@@ -111,23 +103,23 @@ class ExactSampler : public AbstractSampler {
     double logmax = -std::numeric_limits<double>::infinity();
     int count = 0;
     for (int i = mynode_ * division_;
-         i < std::min(constraint_dim_, (mynode_ + 1) * division_); ++i) {
-      auto v = hilbert_index_.NumberToState(index_[i]);
+         i < std::min(dim_, (mynode_ + 1) * division_); ++i) {
+      auto v = hilbert_index_.NumberToState(i);
       logpsivals_(i) = psi_.LogVal(v);
       logmax = std::max(logmax, std::real(logpsivals_(i)));
       ++count;
     }
     MaxOnNodes(logmax);
     SumOnNodes(count);
-    assert(count == constraint_dim_);
+    assert(count == dim_);
 
     for (int i = mynode_ * division_;
-         i < std::min(constraint_dim_, (mynode_ + 1) * division_); ++i) {
+         i < std::min(dim_, (mynode_ + 1) * division_); ++i) {
       psivals_(i) = std::norm(std::exp(logpsivals_(i) - logmax));
     }
     SumOnNodes(psivals_);
     dist_ = std::discrete_distribution<int>(psivals_.data(),
-                                            psivals_.data() + constraint_dim_);
+                                            psivals_.data() + dim_);
 
     accept_ = Eigen::VectorXd::Zero(1);
     moves_ = Eigen::VectorXd::Zero(1);
@@ -136,7 +128,7 @@ class ExactSampler : public AbstractSampler {
 
   void Sweep() override {
     int newstate = dist_(this->GetRandomEngine());
-    v_ = hilbert_index_.NumberToState(index_[newstate]);
+    v_ = hilbert_index_.NumberToState(newstate);
 
     accept_(0) += 1;
     moves_(0) += 1;
