@@ -259,6 +259,7 @@ set(NETKET_SOURCES
     Sources/Hilbert/bosons.cc
     Sources/Hilbert/spins.cc
     Sources/Hilbert/custom_hilbert.cc
+    Sources/Hilbert/fermions.cc
     Sources/Hilbert/py_hilbert.cc
     Sources/Machine/abstract_machine.cc
     Sources/Machine/jastrow.cc

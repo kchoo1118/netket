@@ -23,6 +23,7 @@
 #include "Hilbert/abstract_hilbert.hpp"
 #include "Hilbert/bosons.hpp"
 #include "Hilbert/custom_hilbert.hpp"
+#include "Hilbert/fermions.hpp"
 #include "Hilbert/spins.hpp"
 
 namespace py = pybind11;
@@ -104,6 +105,17 @@ void AddCustomHilbert(py::module subm) {
                100
 
                ```
+           )EOF");
+}
+
+void AddFermions(py::module subm) {
+  py::class_<Fermions, AbstractHilbert, std::shared_ptr<Fermions>>(
+      subm, "Fermions", R"EOF(A fermions hilbert space.)EOF")
+      .def(py::init<const AbstractGraph &, int, bool>(), py::keep_alive<1, 2>(),
+           py::arg("graph"), py::arg("npar"), py::arg("particle_hole"),
+           R"EOF(
+           Constructs a new ``Fermions``.
+
            )EOF");
 }
 
@@ -281,6 +293,7 @@ void AddHilbertModule(py::module m) {
       });
 
   AddSpins(subm);
+  AddFermions(subm);
   AddBosons(subm);
   AddCustomHilbert(subm);
 }
