@@ -15,6 +15,7 @@
 #ifndef NETKET_FERMIONS_HPP
 #define NETKET_FERMIONS_HPP
 
+#include <iostream>
 #include "Graph/abstract_graph.hpp"
 #include "Hilbert/abstract_hilbert.hpp"
 

@@ -43,17 +43,20 @@ void Fermions::RandomVals(Eigen::Ref<Eigen::VectorXd> state,
 
   state.setZero();
   // unconstrained random
-  for (int i = 0; i < npar_; i++) {
-    state(distribution(rgen)) = 1;
-    state(distribution(rgen) + size_ / 2) = 1;
+  for (int i = 0; i < npar_ / 2; i++) {
+    state(i) = 1;
+    state(i + size_ / 2) = 1;
   }
-
+  // std::cout << state.transpose() << std::endl;
+  std::shuffle(state.data(), state.data() + size_ / 2, rgen);
+  std::shuffle(state.data() + size_ / 2, state.data() + size_, rgen);
   if (ph_) {
     for (int i = 0; i < npar_ / 2; i++) {
       state(i) = state(i) > 0.5 ? 0 : 1;
       state(size_ / 2 + i) = state(size_ / 2 + i) > 0.5 ? 0 : 1;
     }
   }
+  // std::cout << state.transpose() << std::endl;
 }
 
 void Fermions::UpdateConf(Eigen::Ref<Eigen::VectorXd> v,
