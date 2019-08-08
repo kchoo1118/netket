@@ -30,7 +30,7 @@ class MetropolisHastings : public AbstractSampler {
  public:
   using TransitionKernel = std::function<void(
       Eigen::Ref<const RowMatrix<double>>, Eigen::Ref<RowMatrix<double>>,
-      Eigen::Ref<Eigen::ArrayXd>, default_random_engine &)>;
+      Eigen::Ref<Eigen::ArrayXd>)>;
 
  private:
   RowMatrix<double> current_X_;
@@ -48,8 +48,8 @@ class MetropolisHastings : public AbstractSampler {
 
   TransitionKernel transition_kernel_;
 
-  Index sweep_size_;
   Index batch_size_;
+  Index sweep_size_;
 
  public:
   MetropolisHastings(AbstractMachine &ma, TransitionKernel tk, Index batch_size,

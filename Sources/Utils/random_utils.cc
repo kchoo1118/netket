@@ -12,24 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NETKET_SAMPLER_HPP
-#define NETKET_SAMPLER_HPP
+#include "random_utils.hpp"
 
-#include <memory>
-#include <set>
-#include "Graph/graph.hpp"
-#include "Operator/operator.hpp"
-#include "Utils/memory_utils.hpp"
-#include "Utils/parallel_utils.hpp"
-#include "abstract_sampler.hpp"
-#include "custom_sampler.hpp"
-#include "custom_sampler_pt.hpp"
-#include "exact_sampler.hpp"
-#include "metropolis_exchange_pt.hpp"
-#include "metropolis_hamiltonian.hpp"
-#include "metropolis_hamiltonian_pt.hpp"
-#include "metropolis_hastings.hpp"
-#include "metropolis_hop.hpp"
-#include "metropolis_local_pt.hpp"
+namespace netket {
 
-#endif
+DistributedRandomEngine& GetDistributedRandomEngine() {
+  static DistributedRandomEngine dre;
+  return dre;
+}
+
+default_random_engine& GetRandomEngine() {
+  return GetDistributedRandomEngine().Get();
+}
+
+}  // namespace netket

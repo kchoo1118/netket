@@ -279,7 +279,6 @@ set(NETKET_SOURCES
     Sources/Optimizer/stochastic_reconfiguration.cc
     Sources/Sampler/vmc_sampling.cc
     Sources/Sampler/metropolis_hastings.cc
-    Sources/Sampler/metropolis_local_v2.cc
     Sources/Stats/mc_stats.cc
     Sources/Stats/py_stats.cc
     Sources/Optimizer/stochastic_reconfiguration.cc
@@ -289,6 +288,7 @@ set(NETKET_SOURCES
     Sources/Utils/exceptions.cc
     Sources/Utils/mpi_interface.cc
     Sources/Utils/py_utils.cc
+    Sources/Utils/random_utils.cc
 )
 
 add_library(netket MODULE ${NETKET_SOURCES})
