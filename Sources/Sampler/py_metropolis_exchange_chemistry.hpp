@@ -35,8 +35,8 @@ void AddMetropolisExchangeChemistry(py::module &subm) {
                  "here. The graph is deduced automatically from machine.\n";
         }
         return MetropolisHastings(
-            m, ExchangeChemistryKernel{m, npar, particle_hole},
-            sweep_size.value_or(m.Nvisible()), batch_size);
+            m, ExchangeChemistryKernel{m, npar, particle_hole}, batch_size,
+            sweep_size.value_or(m.Nvisible()));
       },
       py::keep_alive<1, 2>(), py::arg("machine"), py::arg("graph") = py::none(),
       py::arg("npar"), py::arg("particle_hole"), py::arg("batch_size") = 16,

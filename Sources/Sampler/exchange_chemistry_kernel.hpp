@@ -48,10 +48,9 @@ class ExchangeChemistryKernel {
 
   void operator()(Eigen::Ref<const RowMatrix<double>> v,
                   Eigen::Ref<RowMatrix<double>> vnew,
-                  Eigen::Ref<Eigen::ArrayXd> log_acceptance_correction,
-                  default_random_engine &random_engine) {
+                  Eigen::Ref<Eigen::ArrayXd> log_acceptance_correction) {
     std::uniform_int_distribution<int> disthalf(0, 1);
-    int half = disthalf(random_engine);
+    int half = disthalf(GetRandomEngine());
     vnew = v;
     for (int r = 0; r < vnew.rows(); ++r) {
       if (ph_) {
@@ -70,8 +69,8 @@ class ExchangeChemistryKernel {
           empty.push_back(k);
         }
       }
-      std::shuffle(empty.begin(), empty.end(), random_engine);
-      std::shuffle(occupied.begin(), occupied.end(), random_engine);
+      std::shuffle(empty.begin(), empty.end(), GetRandomEngine());
+      std::shuffle(occupied.begin(), occupied.end(), GetRandomEngine());
       vnew(r, empty[0]) = 1;
       vnew(r, occupied[0]) = 0;
       if (ph_) {
