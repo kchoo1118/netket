@@ -41,12 +41,14 @@ void AddConfiguration(py::module &subm) {
       .def(py::init(
                [](const AbstractHilbert &hi,
                   std::vector<AbstractMachine::RealVectorType> configurations,
-                  std::vector<Complex> amplitudes) {
+                  std::vector<Complex> amplitudes,
+                  nonstd::optional<double> base = nonstd::nullopt) {
                  return Configuration{hi, std::move(configurations),
-                                      std::move(amplitudes)};
+                                      std::move(amplitudes), base};
                }),
            py::keep_alive<1, 2>(), py::arg("hilbert"),
            py::arg("configurations"), py::arg("amplitudes"),
+           py::arg("base") = nonstd::nullopt,
            R"EOF(
                    Constructs a new ``RbmSpin`` machine:
 

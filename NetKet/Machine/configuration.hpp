@@ -15,6 +15,7 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <limits>
+#include <nonstd/optional.hpp>
 #include <vector>
 #include "Utils/all_utils.hpp"
 #include "Utils/lookup.hpp"
@@ -50,6 +51,7 @@ class Configuration : public AbstractMachine {
   int nv_;
   const int npar_;
   int nconfs_;
+  nonstd::optional<double> base_;
 
   std::vector<RealVectorType> configurations_;
   std::vector<Complex> amplitudes_;
@@ -59,13 +61,15 @@ class Configuration : public AbstractMachine {
  public:
   explicit Configuration(const AbstractHilbert &hilbert,
                          std::vector<RealVectorType> configurations,
-                         std::vector<Complex> amplitudes)
+                         std::vector<Complex> amplitudes,
+                         nonstd::optional<double> base = nonstd::nullopt)
       : hilbert_(hilbert),
         nv_(hilbert.Size()),
         configurations_(configurations),
         amplitudes_(amplitudes),
         npar_(0),
-        nconfs_(configurations.size()) {
+        nconfs_(configurations.size()),
+        base_(base) {
     Init();
   }
 
@@ -118,7 +122,11 @@ class Configuration : public AbstractMachine {
       return std::log(search->second);
 
     } else {
-      return -std::numeric_limits<double>::infinity();
+      if (base_.has_value()) {
+        return base_.value();
+      } else {
+        return -std::numeric_limits<double>::infinity();
+      }
     }
   }
 
