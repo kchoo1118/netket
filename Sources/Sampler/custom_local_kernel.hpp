@@ -12,36 +12,53 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NETKET_EXCHANGE_KERNEL_HPP
-#define NETKET_EXCHANGE_KERNEL_HPP
+// authors: Hugo Théveniaut and Fabien Alet
+
+#ifndef NETKET_CUSTOM_LOCAL_KERNEL_HPP
+#define NETKET_CUSTOM_LOCAL_KERNEL_HPP
 
 #include <Eigen/Core>
-#include <array>
+#include <set>
+#include "Operator/local_operator.hpp"
+
 #include "Machine/abstract_machine.hpp"
+#include "Utils/exceptions.hpp"
 #include "Utils/messages.hpp"
+#include "Utils/parallel_utils.hpp"
 #include "Utils/random_utils.hpp"
 
 namespace netket {
 
-// Kernel generating local random exchanges
-class ExchangeKernel {
-  // number of visible units
-  const int nv_;
+// Metropolis sampling using custom moves provided by user
+class CustomLocalKernel {
+  LocalOperator move_operators_;
+  std::vector<double> operatorsweights_;
 
-  // clusters to do updates
-  std::vector<std::array<Index, 2>> clusters_;
+  std::vector<std::vector<int>> tochange_;
+  std::vector<std::vector<double>> newconfs_;
+  std::vector<Complex> mel_;
+
+  Index nstates_;
+
+  std::vector<double> localstates_;
+
+  std::discrete_distribution<Index> disc_dist_;
 
  public:
-  explicit ExchangeKernel(const AbstractMachine &psi, Index dmax = 1);
+  CustomLocalKernel(const AbstractMachine &psi,
+                    const LocalOperator &move_operators,
+                    const std::vector<double> &move_weights = {});
 
   void operator()(Eigen::Ref<const RowMatrix<double>> v,
                   Eigen::Ref<RowMatrix<double>> vnew,
+
                   Eigen::Ref<Eigen::ArrayXd> log_acceptance_correction);
 
  private:
-  void Init(const AbstractGraph &graph, int dmax);
+  void Init(const AbstractMachine &psi,
+            const std::vector<double> &move_weights);
+  void CheckMoveOperators(const LocalOperator &move_operators);
 };
-
 }  // namespace netket
 
 #endif

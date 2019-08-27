@@ -36,23 +36,26 @@ template <class T, class... Args>
 pybind11::class_<T, Args...> AddAcceptance(pybind11::class_<T, Args...> cls) {
   return cls.def_property_readonly(
       "acceptance", [](const T& self) { return self.Acceptance(); }, R"EOF(
-        numpy.array: The measured acceptance rate for the sampling.
+        float or numpy.array: The measured acceptance rate for the sampling.
         In the case of rejection-free sampling this is always equal to 1.)EOF");
+}
+template <class T, class... Args>
+pybind11::class_<T, Args...> AddSamplerStats(pybind11::class_<T, Args...> cls) {
+  return cls.def_property_readonly(
+      "stats", [](const T& self) { return self.Stats(); }, R"EOF(
+      Internal statistics for the sampling procedure.)EOF");
 }
 }  // namespace netket
 
 #include "py_custom_sampler.hpp"
-#include "py_custom_sampler_pt.hpp"
 #include "py_exact_sampler.hpp"
 #include "py_metropolis_exchange.hpp"
 #include "py_metropolis_exchange_chemistry.hpp"
 #include "py_metropolis_exchange_pt.hpp"
 #include "py_metropolis_hamiltonian.hpp"
-#include "py_metropolis_hamiltonian_pt.hpp"
 #include "py_metropolis_hastings.hpp"
 #include "py_metropolis_hop.hpp"
 #include "py_metropolis_local.hpp"
-#include "py_metropolis_local_pt.hpp"
 
 namespace py = pybind11;
 
@@ -145,15 +148,11 @@ void AddSamplerModule(py::module& m) {
                                    however in general $$F(\Psi(v))$$)EOF");
 
   AddMetropolisLocal(subm);
-  AddMetropolisLocalPt(subm);
   AddMetropolisHop(subm);
   AddMetropolisHamiltonian(subm);
-  AddMetropolisHamiltonianPt(subm);
   AddMetropolisExchange(subm);
-  AddMetropolisExchangePt(subm);
   AddExactSampler(subm);
   AddCustomSampler(subm);
-  AddCustomSamplerPt(subm);
   AddMetropolisHastings(subm);
   AddMetropolisExchangeChemistry(subm);
 }

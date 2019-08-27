@@ -12,27 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NETKET_LOCAL_KERNEL_HPP
-#define NETKET_LOCAL_KERNEL_HPP
+#ifndef NETKET_HAMILTONIAN_KERNEL_HPP
+#define NETKET_HAMILTONIAN_KERNEL_HPP
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include "Machine/abstract_machine.hpp"
+#include "Operator/abstract_operator.hpp"
+#include "Utils/messages.hpp"
 #include "Utils/random_utils.hpp"
 
 namespace netket {
 
-// Metropolis sampling generating local moves in hilbert space
-class LocalKernel {
-  std::vector<double> local_states_;
-  const Index n_states_;
+// Generating transitions using the Hamiltonian matrix elements
+class HamiltonianKernel {
+  AbstractOperator &hamiltonian_;
+
+  // number of visible units
   const Index nv_;
 
+  std::vector<std::vector<int>> tochange_;
+  std::vector<std::vector<double>> newconfs_;
+  std::vector<Complex> mel_;
+
  public:
-  explicit LocalKernel(const AbstractMachine& psi);
+  HamiltonianKernel(const AbstractMachine &psi, AbstractOperator &hamiltonian);
 
   void operator()(Eigen::Ref<const RowMatrix<double>> v,
                   Eigen::Ref<RowMatrix<double>> vnew,
-                  Eigen::Ref<Eigen::ArrayXd> log_acceptance_correction);
+                  Eigen::Ref<Eigen::ArrayXd> acceptance_correction);
 };
 
 }  // namespace netket

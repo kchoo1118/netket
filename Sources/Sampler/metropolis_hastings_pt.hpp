@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SOURCES_SAMPLER_METROPOLISHASTINGS_HPP
-#define SOURCES_SAMPLER_METROPOLISHASTINGS_HPP
+#ifndef SOURCES_SAMPLER_METROPOLISHASTINGSPT_HPP
+#define SOURCES_SAMPLER_METROPOLISHASTINGSPT_HPP
 
 #include <Eigen/Core>
 #include <functional>
 #include <limits>
+#include <map>
+#include <string>
 #include <vector>
 
 #include "Sampler/abstract_sampler.hpp"
@@ -26,7 +28,9 @@
 
 namespace netket {
 
-class MetropolisHastings : public AbstractSampler {
+// Generic Metropolis-Hastings MCMC with parallel tempering
+// a.k.a. replica exchange Monte Carlo
+class MetropolisHastingsPt : public AbstractSampler {
  public:
   using TransitionKernel = std::function<void(
       Eigen::Ref<const RowMatrix<double>>, Eigen::Ref<RowMatrix<double>>,
@@ -42,21 +46,30 @@ class MetropolisHastings : public AbstractSampler {
   Eigen::ArrayXcd quotient_Y_;
   Eigen::ArrayXd probability_;
 
+  Eigen::ArrayXd beta_;
+  Eigen::ArrayXd proposed_beta_;
+
   Eigen::ArrayXd log_acceptance_correction_;
 
   Eigen::Array<bool, Eigen::Dynamic, 1> accept_;
 
   TransitionKernel transition_kernel_;
 
-  Index batch_size_;
+  Index n_replicas_;
   Index sweep_size_;
 
-  Index accepted_samples_;
+  // Index holding the position of beta=1
+  Index beta1_ind_;
+
+  Eigen::ArrayXd accepted_samples_;
   Index total_samples_;
+  Index total_exchange_steps_;
+  double beta1_av_;
+  double beta1_av_sq_;
 
  public:
-  MetropolisHastings(AbstractMachine &ma, TransitionKernel tk, Index batch_size,
-                     Index sweep_size);
+  MetropolisHastingsPt(AbstractMachine& ma, TransitionKernel tk,
+                       Index n_replicas, Index sweep_size);
 
   Index BatchSize() const noexcept override;
 
@@ -72,13 +85,40 @@ class MetropolisHastings : public AbstractSampler {
 
   void OneStep();
 
+  void ExchangeStep();
+
   void Sweep() override;
 
   /// Resets the sampler.
   void Reset(bool init_random) override;
 
-  NETKET_SAMPLER_ACCEPTANCE_DEFAULT(accepted_samples_, total_samples_);
+  void ProposePairwiseSwap(Eigen::Ref<const Eigen::ArrayXd>,
+                           Eigen::Ref<Eigen::ArrayXd>, int);
+
+  NETKET_SAMPLER_ACCEPTANCE_DEFAULT(accepted_samples_.mean(), total_samples_);
+
+  std::map<std::string, double> Stats() const;
 };
+
+namespace detail {
+inline Index CheckReplicasSize(const char* func, const Index n_replicas) {
+  if (n_replicas < 2) {
+    std::ostringstream msg;
+    msg << func << ": invalid number of replicas : " << n_replicas
+        << "; expected at least two replicas";
+    throw InvalidInputError{msg.str()};
+  }
+  if (n_replicas % 2 != 0) {
+    std::ostringstream msg;
+    msg << func << ": invalid number of replicas : " << n_replicas
+        << "; expected an even number of replicas";
+    throw InvalidInputError{msg.str()};
+  }
+
+  return n_replicas;
+}
+
+}  // namespace detail
 
 }  // namespace netket
 

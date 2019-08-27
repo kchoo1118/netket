@@ -94,61 +94,6 @@ inline Eigen::Ref<const Eigen::VectorXd> VisibleLegacy(
   return visible.row(0);
 }
 
-/// \brief A helper class to keep track of the logarithm of the wavefunction.
-///
-/// It uses Kahan's summation algorithm (Neumaier's adaptation of it) under
-/// the hood to reduce accumulation errors for long Markov chains.
-class LogValAccumulator {
-  using Real = long double;
-
-  struct Accumulator {
-    Real sum;
-    Real correction;
-
-    /// \brief Adds \p value to the accumulator.
-    Accumulator& operator+=(Real value) noexcept {
-      const auto t = sum + value;
-      correction += std::abs(sum) >= std::abs(value) ? (sum - t) + value
-                                                     : (value - t) + sum;
-      sum = t;
-      return *this;
-    }
-
-    /// \brief Conversion to `double` as a way to get the current sum.
-    explicit operator double() const noexcept {
-      return static_cast<double>(sum + correction);
-    }
-  };
-
-  Accumulator real_;
-  Accumulator imag_;
-  mutable Complex result_;
-
- public:
-  explicit LogValAccumulator(const Complex log_val = {0, 0})
-      : real_{log_val.real(), 0}, imag_{log_val.imag(), 0}, result_{0, 0} {}
-
-  LogValAccumulator(const LogValAccumulator&) = default;
-  LogValAccumulator(LogValAccumulator&&) = default;
-  LogValAccumulator& operator=(const LogValAccumulator&) = default;
-  LogValAccumulator& operator=(LogValAccumulator&&) = default;
-
-  const Complex& LogVal() const noexcept {
-    result_ = Complex{static_cast<double>(real_), static_cast<double>(imag_)};
-    return result_;
-  }
-
-  LogValAccumulator& operator=(const Complex log_val) noexcept {
-    return *this = LogValAccumulator{log_val};
-  }
-
-  LogValAccumulator& operator+=(const Complex log_val) noexcept {
-    real_ += log_val.real();
-    imag_ += log_val.imag();
-    return *this;
-  }
-};
-
 namespace detail {
 inline Index CheckBatchSize(const char* func, const Index batch_size) {
   if (batch_size <= 0) {
@@ -171,26 +116,11 @@ inline Index CheckSweepSize(const char* func, const Index sweep_size) {
 }
 }  // namespace detail
 
-#define NETKET_SAMPLER_SET_VISIBLE_DEFAULT(var)                     \
-  void SetVisible(Eigen::Ref<const RowMatrix<double>> v) override { \
-    CheckShape(__FUNCTION__, "v", {v.rows(), v.cols()},             \
-               {1, GetMachine().Nvisible()});                       \
-    var = v.row(0);                                                 \
-    Reset(false);                                                   \
-  }
-
 #define NETKET_SAMPLER_ACCEPTANCE_DEFAULT(accepts, moves)                  \
   double Acceptance() const {                                              \
     NETKET_CHECK(moves > 0, RuntimeError,                                  \
                  "Cannot compute acceptance, because no moves were made"); \
     return static_cast<double>(accepts) / static_cast<double>(moves);      \
-  }
-
-#define NETKET_SAMPLER_ACCEPTANCE_DEFAULT_PT(accepts, moves)               \
-  Eigen::VectorXd Acceptance() const {                                     \
-    NETKET_CHECK((moves.array() > 0).all(), RuntimeError,                  \
-                 "Cannot compute acceptance, because no moves were made"); \
-    return (accepts.array() / moves.array()).matrix();                     \
   }
 
 #define NETKET_SAMPLER_APPLY_MACHINE_FUNC(expr)                \
