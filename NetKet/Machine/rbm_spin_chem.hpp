@@ -17,7 +17,7 @@
 #include <vector>
 #include "Utils/all_utils.hpp"
 #include "Utils/lookup.hpp"
-#include "rbm_spin.hpp"
+#include "configuration.hpp"
 
 #ifndef NETKET_RBM_SPIN_CHEM_HPP
 #define NETKET_RBM_SPIN_CHEM_HPP
@@ -41,11 +41,9 @@ class RbmSpinChem : public AbstractMachine {
 
   // weights
   MatrixType W_;
-  MatrixType Wspin_;
 
   // visible units bias
   VectorType a_;
-  VectorType aspin_;
 
   // hidden units bias
   VectorType b_;
@@ -58,16 +56,18 @@ class RbmSpinChem : public AbstractMachine {
   bool usea_;
   bool useb_;
 
+  int npar_;
+
  public:
   explicit RbmSpinChem(const AbstractHilbert &hilbert, int nhidden = 0,
-                       int alpha = 0, bool usea = true, bool useb = true)
-      : hilbert_(hilbert), nv_(hilbert.Size()), usea_(usea), useb_(useb) {
+                       int alpha = 0, bool usea = true, bool useb = true,
+                       int npar)
+      : hilbert_(hilbert),
+        nv_(hilbert.Size()),
+        usea_(usea),
+        useb_(useb),
+        npar_(npar) {
     nh_ = std::max(nhidden, alpha * nv_);
-
-    if ((nv_ % 2) != 0) {
-      throw InvalidInputError(
-          "RbmSpinChem requires number of visible units to be even.");
-    }
 
     Init();
   }
@@ -77,18 +77,15 @@ class RbmSpinChem : public AbstractMachine {
     a_.resize(nv_);
     b_.resize(nh_);
 
-    Wspin_.resize(nv_ / 2, nh_);
-    aspin_.resize(nv_ / 2);
-
     thetas_.resize(nh_);
     lnthetas_.resize(nh_);
     thetasnew_.resize(nh_);
     lnthetasnew_.resize(nh_);
 
-    npar_ = nv_ * nh_ / 2;
+    npar_ = nv_ * nh_;
 
     if (usea_) {
-      npar_ += nv_ / 2;
+      npar_ += nv_;
     } else {
       a_.setZero();
     }
@@ -99,11 +96,10 @@ class RbmSpinChem : public AbstractMachine {
       b_.setZero();
     }
 
-    InfoMessage() << "RBM Chem Initizialized with nvisible = " << nv_
+    InfoMessage() << "RBM Initizialized with nvisible = " << nv_
                   << " and nhidden = " << nh_ << std::endl;
     InfoMessage() << "Using visible bias = " << usea_ << std::endl;
     InfoMessage() << "Using hidden bias  = " << useb_ << std::endl;
-    InfoMessage() << "Num of Pars  = " << npar_ << std::endl;
   }
 
   int Nvisible() const override { return nv_; }
@@ -148,8 +144,8 @@ class RbmSpinChem : public AbstractMachine {
     int k = 0;
 
     if (usea_) {
-      for (; k < nv_ / 2; k++) {
-        der(k) = v(k) + v(k + nv_ / 2);
+      for (; k < nv_; k++) {
+        der(k) = v(k);
       }
     }
 
@@ -162,9 +158,9 @@ class RbmSpinChem : public AbstractMachine {
       }
     }
 
-    for (int i = 0; i < nv_ / 2; i++) {
+    for (int i = 0; i < nv_; i++) {
       for (int j = 0; j < nh_; j++) {
-        der(k) = lnthetas_(j) * (v(i) + v(i + nv_ / 2));
+        der(k) = lnthetas_(j) * v(i);
         k++;
       }
     }
@@ -177,8 +173,8 @@ class RbmSpinChem : public AbstractMachine {
     int k = 0;
 
     if (usea_) {
-      for (; k < nv_ / 2; k++) {
-        der(k) = v(k) + v(k + nv_ / 2);
+      for (; k < nv_; k++) {
+        der(k) = v(k);
       }
     }
 
@@ -191,9 +187,9 @@ class RbmSpinChem : public AbstractMachine {
       }
     }
 
-    for (int i = 0; i < nv_ / 2; i++) {
+    for (int i = 0; i < nv_; i++) {
       for (int j = 0; j < nh_; j++) {
-        der(k) = lnthetas_(j) * (v(i) + v(i + nv_ / 2));
+        der(k) = lnthetas_(j) * v(i);
         k++;
       }
     }
@@ -206,8 +202,8 @@ class RbmSpinChem : public AbstractMachine {
     int k = 0;
 
     if (usea_) {
-      for (; k < nv_ / 2; k++) {
-        pars(k) = aspin_(k);
+      for (; k < nv_; k++) {
+        pars(k) = a_(k);
       }
     }
 
@@ -218,9 +214,9 @@ class RbmSpinChem : public AbstractMachine {
       }
     }
 
-    for (int i = 0; i < nv_ / 2; i++) {
+    for (int i = 0; i < nv_; i++) {
       for (int j = 0; j < nh_; j++) {
-        pars(k) = Wspin_(i, j);
+        pars(k) = W_(i, j);
         k++;
       }
     }
@@ -232,8 +228,8 @@ class RbmSpinChem : public AbstractMachine {
     int k = 0;
 
     if (usea_) {
-      for (; k < nv_ / 2; k++) {
-        aspin_(k) = pars(k);
+      for (; k < nv_; k++) {
+        a_(k) = pars(k);
       }
     }
 
@@ -244,32 +240,35 @@ class RbmSpinChem : public AbstractMachine {
       }
     }
 
-    for (int i = 0; i < nv_ / 2; i++) {
+    for (int i = 0; i < nv_; i++) {
       for (int j = 0; j < nh_; j++) {
-        Wspin_(i, j) = pars(k);
+        W_(i, j) = pars(k);
         k++;
       }
     }
-
-    a_.segment(0, nv_ / 2) = aspin_;
-    a_.segment(nv_ / 2, nv_ / 2) = aspin_;
-    W_.block(0, 0, nv_ / 2, nh_) = Wspin_;
-    W_.block(nv_ / 2, 0, nv_ / 2, nh_) = Wspin_;
   }
 
   // Value of the logarithm of the wave-function
   Complex LogVal(VisibleConstType v) override {
-    RbmSpin::lncosh(W_.transpose() * v + b_, lnthetas_);
+    RealVectorType vnew(nv_);
+    if (compare(v.segment(0, nv_ / 2), v.segment(nv_ / 2, nv_ / 2))) {
+      vnew.segment(0, nv_ / 2) = v.segment(nv_ / 2, nv_ / 2);
+      vnew.segment(nv_ / 2, nv_ / 2) = v.segment(0, nv_ / 2);
+    } else {
+      vnew = v;
+    }
+    RbmSpin::lncosh(W_.transpose() * vnew + b_, lnthetas_);
 
-    return (v.dot(a_) + lnthetas_.sum());
+    return (vnew.dot(a_) + lnthetas_.sum());
   }
 
   // Value of the logarithm of the wave-function
   // using pre-computed look-up tables for efficiency
   Complex LogVal(VisibleConstType v, const LookupType &lt) override {
-    RbmSpin::lncosh(lt.V(0), lnthetas_);
-
-    return (v.dot(a_) + lnthetas_.sum());
+    LogVal(v);
+    // RbmSpin::lncosh(lt.V(0), lnthetas_);
+    //
+    // return (v.dot(a_) + lnthetas_.sum());
   }
 
   // Difference between logarithms of values, when one or more visible variables
@@ -277,28 +276,37 @@ class RbmSpinChem : public AbstractMachine {
   VectorType LogValDiff(
       VisibleConstType v, const std::vector<std::vector<int>> &tochange,
       const std::vector<std::vector<double>> &newconf) override {
+    // const std::size_t nconn = tochange.size();
+    // VectorType logvaldiffs = VectorType::Zero(nconn);
+    //
+    // thetas_ = (W_.transpose() * v + b_);
+    // RbmSpin::lncosh(thetas_, lnthetas_);
+    //
+    // Complex logtsum = lnthetas_.sum();
+    //
+    // for (std::size_t k = 0; k < nconn; k++) {
+    //   if (tochange[k].size() != 0) {
+    //     thetasnew_ = thetas_;
+    //
+    //     for (std::size_t s = 0; s < tochange[k].size(); s++) {
+    //       const int sf = tochange[k][s];
+    //
+    //       logvaldiffs(k) += a_(sf) * (newconf[k][s] - v(sf));
+    //
+    //       thetasnew_ += W_.row(sf) * (newconf[k][s] - v(sf));
+    //     }
+    //
+    //     RbmSpin::lncosh(thetasnew_, lnthetasnew_);
+    //     logvaldiffs(k) += lnthetasnew_.sum() - logtsum;
+    //   }
+    // }
+    // return logvaldiffs;
     const std::size_t nconn = tochange.size();
     VectorType logvaldiffs = VectorType::Zero(nconn);
 
-    thetas_ = (W_.transpose() * v + b_);
-    RbmSpin::lncosh(thetas_, lnthetas_);
-
-    Complex logtsum = lnthetas_.sum();
-
     for (std::size_t k = 0; k < nconn; k++) {
       if (tochange[k].size() != 0) {
-        thetasnew_ = thetas_;
-
-        for (std::size_t s = 0; s < tochange[k].size(); s++) {
-          const int sf = tochange[k][s];
-
-          logvaldiffs(k) += a_(sf) * (newconf[k][s] - v(sf));
-
-          thetasnew_ += W_.row(sf) * (newconf[k][s] - v(sf));
-        }
-
-        RbmSpin::lncosh(thetasnew_, lnthetasnew_);
-        logvaldiffs(k) += lnthetasnew_.sum() - logtsum;
+        logvaldiffs(k) = LogValDiff(v, tochange[k], newconf[k], LookupType{});
       }
     }
     return logvaldiffs;
@@ -310,25 +318,79 @@ class RbmSpinChem : public AbstractMachine {
   Complex LogValDiff(VisibleConstType v, const std::vector<int> &tochange,
                      const std::vector<double> &newconf,
                      const LookupType &lt) override {
-    Complex logvaldiff = 0.;
-
+    // Complex logvaldiff = 0.;
+    //
+    // if (tochange.size() != 0) {
+    //   RbmSpin::lncosh(lt.V(0), lnthetas_);
+    //
+    //   thetasnew_ = lt.V(0);
+    //
+    //   for (std::size_t s = 0; s < tochange.size(); s++) {
+    //     const int sf = tochange[s];
+    //
+    //     logvaldiff += a_(sf) * (newconf[s] - v(sf));
+    //
+    //     thetasnew_ += W_.row(sf) * (newconf[s] - v(sf));
+    //   }
+    //
+    //   RbmSpin::lncosh(thetasnew_, lnthetasnew_);
+    //   logvaldiff += (lnthetasnew_.sum() - lnthetas_.sum());
+    // }
+    // return logvaldiff;
     if (tochange.size() != 0) {
-      RbmSpin::lncosh(lt.V(0), lnthetas_);
-
-      thetasnew_ = lt.V(0);
-
+      RealVectorType vnew = v;
       for (std::size_t s = 0; s < tochange.size(); s++) {
-        const int sf = tochange[s];
-
-        logvaldiff += a_(sf) * (newconf[s] - v(sf));
-
-        thetasnew_ += W_.row(sf) * (newconf[s] - v(sf));
+        vnew(tochange[s]) = newconf[s];
       }
-
-      RbmSpin::lncosh(thetasnew_, lnthetasnew_);
-      logvaldiff += (lnthetasnew_.sum() - lnthetas_.sum());
     }
-    return logvaldiff;
+    return LogVal(vnew) - LogVal(v);
+  }
+
+  inline static double lncosh(double x) {
+    const double xp = std::abs(x);
+    if (xp <= 12.) {
+      return std::log(std::cosh(xp));
+    } else {
+      const static double log2v = std::log(2.);
+      return xp - log2v;
+    }
+  }
+
+  // ln(cos(x)) for std::complex argument
+  // the modulus is computed by means of the previously defined function
+  // for real argument
+  inline static Complex lncosh(Complex x) {
+    const double xr = x.real();
+    const double xi = x.imag();
+
+    Complex res = RbmSpin::lncosh(xr);
+    res += std::log(Complex(std::cos(xi), std::tanh(xr) * std::sin(xi)));
+
+    return res;
+  }
+
+  static void tanh(VectorConstRefType x, VectorType &y) {
+    assert(y.size() >= x.size());
+    y = Eigen::tanh(x.array());
+  }
+
+  static void tanh(RealVectorConstRefType x, RealVectorType &y) {
+    assert(y.size() >= x.size());
+    y = Eigen::tanh(x.array());
+  }
+
+  static void lncosh(VectorConstRefType x, VectorType &y) {
+    assert(y.size() >= x.size());
+    for (int i = 0; i < x.size(); i++) {
+      y(i) = lncosh(x(i));
+    }
+  }
+
+  static void lncosh(RealVectorConstRefType x, RealVectorType &y) {
+    assert(y.size() >= x.size());
+    for (int i = 0; i < x.size(); i++) {
+      y(i) = lncosh(x(i));
+    }
   }
 
   const AbstractHilbert &GetHilbert() const noexcept override {
@@ -336,21 +398,21 @@ class RbmSpinChem : public AbstractMachine {
   }
 
   void to_json(json &j) const override {
-    j["Name"] = "RbmSpinChem";
+    j["Name"] = "RbmSpin";
     j["Nvisible"] = nv_;
     j["Nhidden"] = nh_;
     j["UseVisibleBias"] = usea_;
     j["UseHiddenBias"] = useb_;
-    j["aspin"] = aspin_;
+    j["a"] = a_;
     j["b"] = b_;
-    j["Wspin"] = Wspin_;
+    j["W"] = W_;
   }
 
   void from_json(const json &pars) override {
     std::string name = FieldVal<std::string>(pars, "Name");
-    if (name != "RbmSpinChem") {
+    if (name != "RbmSpin") {
       throw InvalidInputError(
-          "Error while constructing RbmSpinChem from input parameters");
+          "Error while constructing RbmSpin from input parameters");
     }
 
     if (FieldExists(pars, "Nvisible")) {
@@ -374,8 +436,8 @@ class RbmSpinChem : public AbstractMachine {
     Init();
 
     // Loading parameters, if defined in the input
-    if (FieldExists(pars, "aspin")) {
-      aspin_ = FieldVal<VectorType>(pars, "aspin");
+    if (FieldExists(pars, "a")) {
+      a_ = FieldVal<VectorType>(pars, "a");
     } else {
       a_.setZero();
     }
@@ -385,14 +447,9 @@ class RbmSpinChem : public AbstractMachine {
     } else {
       b_.setZero();
     }
-    if (FieldExists(pars, "Wspin")) {
-      Wspin_ = FieldVal<MatrixType>(pars, "Wspin");
+    if (FieldExists(pars, "W")) {
+      W_ = FieldVal<MatrixType>(pars, "W");
     }
-
-    a_.segment(0, nv_ / 2) = aspin_;
-    a_.segment(nv_ / 2, nv_ / 2) = aspin_;
-    W_.block(0, 0, nv_ / 2, nh_) = Wspin_;
-    W_.block(nv_ / 2, 0, nv_ / 2, nh_) = Wspin_;
   }
 };
 
