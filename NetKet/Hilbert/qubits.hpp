@@ -97,6 +97,9 @@ class Qubit : public AbstractHilbert {
   bool CheckConstraint(const Eigen::Ref<Eigen::VectorXd> v) const {
     if (constraintUp_) {
       return ((v.segment(0, nqubits_ / 2).sum() < (totalUp_ / 2 + 0.01)) &&
+              (v.segment(0, nqubits_ / 2).sum() > (totalUp_ / 2 - 0.01))) &&
+             ((v.segment(nqubits_ / 2, nqubits_ / 2).sum() <
+               (totalUp_ / 2 + 0.01)) &&
               (v.segment(nqubits_ / 2, nqubits_ / 2).sum() >
                (totalUp_ / 2 - 0.01)));
     } else {
