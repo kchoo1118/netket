@@ -39,7 +39,7 @@
 #include "py_product_machine.hpp"
 #include "py_rbm_multival.hpp"
 #include "py_rbm_spin.hpp"
-#include "py_rbm_spin_chem.hpp"
+// #include "py_rbm_spin_chem.hpp"
 #include "py_rbm_spin_phase.hpp"
 #include "py_rbm_spin_real.hpp"
 #include "py_rbm_spin_symm.hpp"
@@ -156,7 +156,7 @@ void AddMachineModule(py::module &m) {
            )EOF");
 
   AddRbmSpin(subm);
-  AddRbmSpinChem(subm);
+  // AddRbmSpinChem(subm);
   AddRbmSpinSymm(subm);
   AddRbmMultival(subm);
   AddPairProduct(subm);
