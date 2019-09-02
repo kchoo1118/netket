@@ -79,7 +79,7 @@ class ExactSampler : public AbstractSampler {
     psivals_.setZero();
 
     // Divide among node
-    division_ = (int)(std::ceil(dim_ / totalnodes_) + 0.5);
+    division_ = (int)(std::ceil(dim_ / (double)totalnodes_) + 0.5);
     if (!hilbert_.IsDiscrete()) {
       throw InvalidInputError(
           "Exact sampler works only for discrete "
@@ -91,7 +91,8 @@ class ExactSampler : public AbstractSampler {
 
     Reset(true);
 
-    InfoMessage() << "Exact sampler is ready " << std::endl;
+    InfoMessage() << "Exact sampler is ready with dimensions " << dim_
+                  << std::endl;
   }
 
   void Reset(bool initrandom) override {

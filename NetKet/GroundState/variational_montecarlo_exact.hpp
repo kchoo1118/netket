@@ -163,9 +163,6 @@ class VariationalMonteCarloExact {
     int end_idx = std::min(dim_, (mynode_ + 1) * division_);
     node_dim_ = end_idx - start_idx;
 
-    std::cout << "division_ = " << division_ << std::endl;
-    std::cout << "node dim = " << node_dim_ << std::endl;
-
     psivals_.resize(node_dim_);
     psivals_.setZero();
 
