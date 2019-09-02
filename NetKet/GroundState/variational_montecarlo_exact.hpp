@@ -157,11 +157,14 @@ class VariationalMonteCarloExact {
     MPI_Comm_size(MPI_COMM_WORLD, &totalnodes_);
     MPI_Comm_rank(MPI_COMM_WORLD, &mynode_);
 
-    division_ = (int)(std::ceil(dim_ / totalnodes_) + 0.5);
+    division_ = (int)(std::ceil(dim_ / (double)totalnodes_) + 0.5);
 
     int start_idx = mynode_ * division_;
     int end_idx = std::min(dim_, (mynode_ + 1) * division_);
     node_dim_ = end_idx - start_idx;
+
+    std::cout << "division_ = " << division_ << std::endl;
+    std::cout << "node dim = " << node_dim_ << std::endl;
 
     psivals_.resize(node_dim_);
     psivals_.setZero();
