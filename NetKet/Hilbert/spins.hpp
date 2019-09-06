@@ -104,6 +104,14 @@ class Spin : public AbstractHilbert {
     }
   }
 
+  bool InHilbertSpace(Eigen::Ref<Eigen::VectorXd> v) const override {
+    if (((v.sum()) > (totalS_ - 0.1)) && ((v.sum()) < (totalS_ + 0.1))) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   bool IsDiscrete() const override { return true; }
 
   int LocalSize() const override { return nstates_; }
