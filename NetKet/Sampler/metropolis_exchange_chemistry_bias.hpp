@@ -72,6 +72,8 @@ class MetropolisExchangeChemistryBias : public AbstractSampler {
   Eigen::VectorXd vhf_;
   double gammabias_;
 
+  int sweepsize_;
+
  public:
   MetropolisExchangeChemistryBias(AbstractMachine &psi, H &hamiltonian,
                                   int npar, int njumps, std::string mapping,
@@ -94,6 +96,8 @@ class MetropolisExchangeChemistryBias : public AbstractSampler {
   }
 
   void Init() {
+    sweepsize_ = nv_;
+
     v_.resize(nv_);
     vjw_.resize(nv_);
 
@@ -251,7 +255,7 @@ class MetropolisExchangeChemistryBias : public AbstractSampler {
       std::uniform_real_distribution<double> distu;
       std::vector<double> newconf;
 
-      for (int i = 0; i < std::max(1., 1. / acceptancead_) * nv_; i++) {
+      for (int i = 0; i < std::max(1., 1. / acceptancead_) * sweepsize_; i++) {
         h_.FindConn(v_, mel_, tochange_, newconfs_);
         std::vector<double> melabs(mel_.size());
         for (int j = 0; j < mel_.size(); ++j) {
@@ -308,7 +312,7 @@ class MetropolisExchangeChemistryBias : public AbstractSampler {
 
       std::vector<double> newconf;
 
-      for (int i = 0; i < nv_; i++) {
+      for (int i = 0; i < sweepsize_; i++) {
         int nflips = distnumber(rgen_);
         Eigen::VectorXd vjwt = vjw_;
 
@@ -417,6 +421,9 @@ class MetropolisExchangeChemistryBias : public AbstractSampler {
       return 0;
     }
   }
+
+  void SetSweepSize(int sweepsize) { sweepsize_ = sweepsize; }
+  int SweepSize() { return sweepsize_; }
 
   Eigen::VectorXd Acceptance() const override {
     Eigen::VectorXd acc = accept_;

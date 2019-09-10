@@ -77,9 +77,7 @@ void AddMetropolisExchangeChemistry(py::module &subm) {
                  ```
              )EOF")
       .def_property("sweep_size", &DerSampler::SweepSize,
-                    &DerSampler::SetSweepSize,
-                    R"EOF(
-                             int: Sweep Size )EOF");
+                    &DerSampler::SetSweepSize, R"EOF(int: Sweep Size )EOF");
 }
 }  // namespace netket
 #endif

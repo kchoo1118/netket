@@ -77,7 +77,9 @@ void AddMetropolisExchangeChemistryBias(py::module &subm) {
                  >>> sa = nk.sampler.MetropolisHamiltonian(machine=ma,hamiltonian=ha)
 
                  ```
-             )EOF");
+             )EOF")
+      .def_property("sweep_size", &DerSampler::SweepSize,
+                    &DerSampler::SetSweepSize, R"EOF(int: Sweep Size )EOF");
 }
 }  // namespace netket
 #endif

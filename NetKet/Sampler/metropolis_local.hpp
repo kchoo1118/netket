@@ -48,6 +48,7 @@ class MetropolisLocal : public AbstractSampler {
 
   int nstates_;
   std::vector<double> localstates_;
+  int sweepsize_;
 
  public:
   explicit MetropolisLocal(AbstractMachine& psi)
@@ -56,6 +57,7 @@ class MetropolisLocal : public AbstractSampler {
   }
 
   void Init() {
+    sweepsize_ = nv_;
     v_.resize(nv_);
 
     MPI_Comm_size(MPI_COMM_WORLD, &totalnodes_);
@@ -97,7 +99,7 @@ class MetropolisLocal : public AbstractSampler {
     std::uniform_int_distribution<int> distrs(0, nv_ - 1);
     std::uniform_int_distribution<int> diststate(0, nstates_ - 1);
 
-    for (int i = 0; i < nv_; i++) {
+    for (int i = 0; i < sweepsize_; i++) {
       // picking a random site to be changed
       int si = distrs(this->GetRandomEngine());
       assert(si < nv_);
@@ -147,6 +149,8 @@ class MetropolisLocal : public AbstractSampler {
       moves_[0] += 1;
     }
   }
+  void SetSweepSize(int sweepsize) { sweepsize_ = sweepsize; }
+  int SweepSize() { return sweepsize_; }
 
   Eigen::VectorXd Visible() override { return v_; }
 

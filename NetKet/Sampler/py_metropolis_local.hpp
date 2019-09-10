@@ -72,7 +72,12 @@ void AddMetropolisLocal(py::module &subm) {
                  100
 
                  ```
-             )EOF");
+             )EOF")
+      .def_property("sweep_size", &DerSampler::SweepSize,
+                    &DerSampler::SetSweepSize,
+                    R"EOF(
+                                    int: Sweep Size )EOF");
+  ;
 }
 }  // namespace netket
 #endif
