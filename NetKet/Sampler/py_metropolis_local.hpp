@@ -23,6 +23,7 @@ namespace py = pybind11;
 namespace netket {
 
 void AddMetropolisLocal(py::module &subm) {
+  using DerSampler = MetropolisLocal;
   py::class_<MetropolisLocal, AbstractSampler>(subm, "MetropolisLocal", R"EOF(
       This sampler acts locally only on one local degree of freedom $$s_i$$,
       and proposes a new state: $$ s_1 \dots s^\prime_i \dots s_N $$,
