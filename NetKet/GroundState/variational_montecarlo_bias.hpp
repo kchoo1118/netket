@@ -282,6 +282,8 @@ class VariationalMonteCarloBias {
       elocs_(i) = ObsLocValue(ham_, vsamp_.row(i));
       obsmanager_.Push("Energy", elocs_(i).real() * std::real(weights_(i)));
       elocmean_ += elocs_(i).real() * std::real(weights_(i));
+      std::cout << elocs_(i).real() * std::real(weights_(i))
+                << " " std::real(weights_(i)) << std::endl;
     }
 
     // elocmean_ = elocs_.mean();
