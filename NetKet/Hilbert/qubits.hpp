@@ -38,8 +38,9 @@ class Qubit : public AbstractHilbert {
 
   int nqubits_;
 
-  double totalUp_;
+  int totalUp_;
   bool constraintUp_;
+  bool particlehole_;
 
  public:
   explicit Qubit(const AbstractGraph &graph) : graph_(graph) {
@@ -47,9 +48,11 @@ class Qubit : public AbstractHilbert {
     Init(nqubits);
 
     constraintUp_ = false;
+    particlehole_ = false;
   }
 
-  explicit Qubit(const AbstractGraph &graph, int totalUp) : graph_(graph) {
+  explicit Qubit(const AbstractGraph &graph, int totalUp, bool particlehole)
+      : graph_(graph), particlehole_(particlehole) {
     const int nqubits = graph.Size();
     Init(nqubits);
 
@@ -74,6 +77,12 @@ class Qubit : public AbstractHilbert {
           "Cannot fix the total number of 1 bits: |M| cannot "
           "exceed Nqubits.");
     }
+    if (nqubits_ % 2 != 0) {
+      throw InvalidInputError("Number of qubits must be even");
+    }
+    if (totalUp % 2 != 0) {
+      throw InvalidInputError("Number of particles must be even");
+    }
   }
 
   bool IsDiscrete() const override { return true; }
@@ -83,10 +92,28 @@ class Qubit : public AbstractHilbert {
   int Size() const override { return nqubits_; }
 
   bool InHilbertSpace(Eigen::Ref<Eigen::VectorXd> v) const override {
-    if (CheckLength(v) && CheckConstraint(v) && CheckLocal(v)) {
-      return true;
+    if (!particlehole_) {
+      if (CheckLength(v) && CheckConstraint(v) && CheckLocal(v)) {
+        return true;
+      } else {
+        return false;
+      }
     } else {
-      return false;
+      Eigen::VectorXd vnew;
+      vnew = v;
+      PhTransform(vnew);
+      if (CheckLength(vnew) && CheckConstraint(vnew) && CheckLocal(vnew)) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  void PhTransform(Eigen::VectorXd &v) const {
+    for (int i = 0; i < totalUp_ / 2; i++) {
+      v(i) = v(i) > 0.5 ? 0 : 1;
+      v(nqubits_ / 2 + i) = v(nqubits_ / 2 + i) > 0.5 ? 0 : 1;
     }
   }
 
@@ -144,6 +171,12 @@ class Qubit : public AbstractHilbert {
       std::fill_n(state.data(), nup, 1.0);
       std::fill_n(state.data() + nup, ndown, 0.0);
       std::shuffle(state.data(), state.data() + nqubits_, rgen);
+      if (particlehole_) {
+        for (int i = 0; i < totalUp_ / 2; i++) {
+          state(i) = state(i) > 0.5 ? 0 : 1;
+          state(nqubits_ / 2 + i) = state(nqubits_ / 2 + i) > 0.5 ? 0 : 1;
+        }
+      }
       return;
     }
   }
