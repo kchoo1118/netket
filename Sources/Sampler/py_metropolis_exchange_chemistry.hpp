@@ -27,7 +27,7 @@ void AddMetropolisExchangeChemistry(py::module &subm) {
   subm.def(
       "MetropolisExchangeChemistry",
       [](AbstractMachine &m, nonstd::optional<AbstractGraph *> g, int npar,
-         bool particle_hole, Index batch_size,
+         bool particle_hole, Index batch_size, int njumps,
          nonstd::optional<Index> sweep_size) {
         if (g.has_value()) {
           WarningMessage()
@@ -35,12 +35,12 @@ void AddMetropolisExchangeChemistry(py::module &subm) {
                  "here. The graph is deduced automatically from machine.\n";
         }
         return MetropolisHastings(
-            m, ExchangeChemistryKernel{m, npar, particle_hole}, batch_size,
-            sweep_size.value_or(m.Nvisible()));
+            m, ExchangeChemistryKernel{m, npar, particle_hole, njumps},
+            batch_size, sweep_size.value_or(m.Nvisible()));
       },
       py::keep_alive<1, 2>(), py::arg("machine"), py::arg("graph") = py::none(),
       py::arg("npar"), py::arg("particle_hole"), py::arg("batch_size") = 16,
-      py::arg{"sweep_size"} = py::none(),
+      py::arg("njumps") = 1, py::arg{"sweep_size"} = py::none(),
       R"EOF(
 
           )EOF");

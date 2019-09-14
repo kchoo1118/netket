@@ -70,6 +70,7 @@ class VariationalMonteCarlo {
   MCResult mc_data_;
   Eigen::VectorXcd locvals_;
   Eigen::VectorXcd grad_;
+  Eigen::VectorXcd deltap_;
 
   int nsamples_;
   int nsamples_node_;
@@ -108,6 +109,7 @@ class VariationalMonteCarlo {
     npar_ = psi_.Npar();
     opt_.Init(npar_, psi_.IsHolomorphic());
     grad_.resize(npar_);
+    deltap_.resize(npar_);
 
     MPI_Comm_size(MPI_COMM_WORLD, &totalnodes_);
     MPI_Comm_rank(MPI_COMM_WORLD, &mynode_);
@@ -243,6 +245,12 @@ class VariationalMonteCarlo {
       // written once
       if (writer.has_value()) {
         auto obs_data = json(observable_stats_);
+        // Eigen::VectorXd acceptance = sampler_.Acceptance();
+        // SumOnNodes(acceptance);
+        // acceptance /= double(totalnodes_);
+        // obs_data["Acceptance"] = acceptance;
+        obs_data["GradNorm"] = grad_.norm();
+        obs_data["UpdateNorm"] = deltap_.norm();
 
         writer->WriteLog(step, obs_data);
         writer->WriteState(step, psi_);
@@ -254,16 +262,14 @@ class VariationalMonteCarlo {
   void UpdateParameters() {
     auto pars = psi_.GetParameters();
 
-    Eigen::VectorXcd deltap(npar_);
-
     if (sr_.has_value()) {
       assert(mc_data_.der_logs.has_value());
       // TODO: This copies data!!
-      sr_->ComputeUpdate(*mc_data_.der_logs, grad_, deltap);
+      sr_->ComputeUpdate(*mc_data_.der_logs, grad_, deltap_);
     } else {
-      deltap = grad_;
+      deltap_ = grad_;
     }
-    opt_.Update(deltap, pars);
+    opt_.Update(deltap_, pars);
 
     SendToAll(pars);
 

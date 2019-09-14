@@ -29,14 +29,19 @@ class ExchangeChemistryKernel {
 
   int npar_;
 
+  int njumps_;
+
   bool ph_;
 
   std::uniform_int_distribution<Index> distcl_;
 
  public:
   explicit ExchangeChemistryKernel(const AbstractMachine &psi, int npar,
-                                   bool particle_hole)
-      : nv_(psi.GetHilbert().Size()), npar_(npar), ph_(particle_hole) {
+                                   bool particle_hole, int njumps)
+      : nv_(psi.GetHilbert().Size()),
+        npar_(npar),
+        ph_(particle_hole),
+        njumps_(njumps) {
     Init();
   }
 
@@ -53,30 +58,32 @@ class ExchangeChemistryKernel {
     int half = disthalf(GetRandomEngine());
     vnew = v;
     for (int r = 0; r < vnew.rows(); ++r) {
-      if (ph_) {
-        for (int i = 0; i < npar_ / 2; i++) {
-          vnew(r, i) = vnew(r, i) > 0.5 ? 0 : 1;
-          vnew(r, nv_ / 2 + i) = vnew(r, nv_ / 2 + i) > 0.5 ? 0 : 1;
+      for (int k = 0; k < njumps_; ++k) {
+        if (ph_) {
+          for (int i = 0; i < npar_ / 2; i++) {
+            vnew(r, i) = vnew(r, i) > 0.5 ? 0 : 1;
+            vnew(r, nv_ / 2 + i) = vnew(r, nv_ / 2 + i) > 0.5 ? 0 : 1;
+          }
         }
-      }
-      std::vector<int> occupied;
-      std::vector<int> empty;
-      for (int k = 0; k < nv_ / 2; k++) {
-        if (std::abs(vnew(r, k + half * nv_ / 2) - 1) <
-            std::numeric_limits<double>::epsilon()) {
-          occupied.push_back(k);
-        } else {
-          empty.push_back(k);
+        std::vector<int> occupied;
+        std::vector<int> empty;
+        for (int k = 0; k < nv_ / 2; k++) {
+          if (std::abs(vnew(r, k + half * nv_ / 2) - 1) <
+              std::numeric_limits<double>::epsilon()) {
+            occupied.push_back(k + half * nv_ / 2);
+          } else {
+            empty.push_back(k + half * nv_ / 2);
+          }
         }
-      }
-      std::shuffle(empty.begin(), empty.end(), GetRandomEngine());
-      std::shuffle(occupied.begin(), occupied.end(), GetRandomEngine());
-      vnew(r, empty[0]) = 1;
-      vnew(r, occupied[0]) = 0;
-      if (ph_) {
-        for (int i = 0; i < npar_ / 2; i++) {
-          vnew(r, i) = vnew(r, i) > 0.5 ? 0 : 1;
-          vnew(r, nv_ / 2 + i) = vnew(r, nv_ / 2 + i) > 0.5 ? 0 : 1;
+        std::shuffle(empty.begin(), empty.end(), GetRandomEngine());
+        std::shuffle(occupied.begin(), occupied.end(), GetRandomEngine());
+        vnew(r, empty[0]) = 1;
+        vnew(r, occupied[0]) = 0;
+        if (ph_) {
+          for (int i = 0; i < npar_ / 2; i++) {
+            vnew(r, i) = vnew(r, i) > 0.5 ? 0 : 1;
+            vnew(r, nv_ / 2 + i) = vnew(r, nv_ / 2 + i) > 0.5 ? 0 : 1;
+          }
         }
       }
     }
