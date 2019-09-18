@@ -33,6 +33,7 @@
 #include "Output/json_output_writer.hpp"
 #include "Sampler/abstract_sampler.hpp"
 #include "Stats/stats.hpp"
+#include "Utils/array_hasher.hpp"
 #include "Utils/parallel_utils.hpp"
 #include "Utils/random_utils.hpp"
 #include "common_types.hpp"
@@ -79,6 +80,7 @@ class VariationalMonteCarloCache {
   ObsManager obsmanager_;
 
   int nsamples_;
+  int total_unique_samples_;
   int nsamples_node_;
   int ninitsamples_;
   int ndiscardedsamples_;
@@ -89,16 +91,13 @@ class VariationalMonteCarloCache {
 
   Eigen::VectorXd acceptance_;
 
-  struct conf_data {
-    int count;
-    Complex eloc;
-    VectorT der_log;
-  };
-
   std::vector<double> count_;
   int n_unique_;
 
-  std::map<Eigen::VectorXd, int, netket::compare> conf_to_data_;
+  // std::map<std::size_t, int> conf_to_data_;
+  std::unordered_map<Eigen::VectorXd, int, EigenArrayHasher<Eigen::VectorXd>,
+                     EigenArrayEqualityComparison<Eigen::VectorXd>>
+      conf_to_data_;
 
  public:
   class Iterator {
@@ -242,6 +241,8 @@ class VariationalMonteCarloCache {
       }
     }
     n_unique_ = id;
+    total_unique_samples_ = n_unique_;
+    SumOnNodes(total_unique_samples_);
   }
 
   /**
@@ -383,6 +384,7 @@ class VariationalMonteCarloCache {
       SumOnNodes(acceptance_);
       acceptance_ /= double(totalnodes_);
       obs_data["Acceptance"] = acceptance_;
+      obs_data["NumUniqueSamples"] = total_unique_samples_;
       obs_data["GradNorm"] = grad_.norm();
       obs_data["UpdateNorm"] = deltap_.norm();
 
@@ -401,12 +403,9 @@ class VariationalMonteCarloCache {
 
     if (dosr_) {
       Eigen::Map<Eigen::VectorXd> count_u(count_.data(), n_unique_);
-      double nu = n_unique_;
-      double ns = nsamples_node_;
-      SumOnNodes(nu);
-      SumOnNodes(ns);
+      double ns = nsamples_node_ * totalnodes_;
       sr_.ComputeUpdate(
-          std::sqrt(nu / ns) *
+          std::sqrt(double(total_unique_samples_) / ns) *
               (Ok_u_.array().colwise() *
                count_u.array().sqrt().cast<std::complex<double>>())
                   .matrix(),
