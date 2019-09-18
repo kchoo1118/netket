@@ -23,6 +23,7 @@
 #include "imaginary_time.hpp"
 #include "variational_montecarlo.hpp"
 #include "variational_montecarlo_bias.hpp"
+#include "variational_montecarlo_cache.hpp"
 #include "variational_montecarlo_exact.hpp"
 
 #endif

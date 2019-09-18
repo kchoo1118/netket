@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <Eigen/Dense>
+#include <algorithm>
 #include <iostream>
 #include <limits>
 #include <nonstd/optional.hpp>
@@ -31,16 +32,18 @@ namespace netket {
 
 struct compare {
   bool operator()(const Eigen::VectorXd &a, const Eigen::VectorXd &b) const {
-    int length = a.size();
-    for (int i = 0; i < length; ++i) {
-      if (a(i) > b(i)) {
-        return false;
-      }
-      if (a(i) < b(i)) {
-        return true;
-      }
-    }
-    return false;
+    // int length = a.size();
+    // for (int i = 0; i < length; ++i) {
+    //   if (a(i) > b(i)) {
+    //     return false;
+    //   }
+    //   if (a(i) < b(i)) {
+    //     return true;
+    //   }
+    // }
+    // return false;
+    return std::lexicographical_compare(a.data(), a.data() + a.size(), b.data(),
+                                        b.data() + b.size());
   }
 };
 

@@ -19,6 +19,7 @@
 #include "py_exact.hpp"
 #include "py_variational_montecarlo.hpp"
 #include "py_variational_montecarlo_bias.hpp"
+#include "py_variational_montecarlo_cache.hpp"
 #include "py_variational_montecarlo_exact.hpp"
 
 namespace py = pybind11;
@@ -29,6 +30,7 @@ void AddGroundStateModule(py::module &m) {
   AddVariationalMonteCarloModule(m);
   AddVariationalMonteCarloExactModule(m);
   AddVariationalMonteCarloBiasModule(m);
+  AddVariationalMonteCarloCacheModule(m);
   AddExactModule(m);
 }
 
