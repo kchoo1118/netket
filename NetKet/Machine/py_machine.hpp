@@ -27,6 +27,7 @@
 #include "abstract_machine.hpp"
 #include "py_autoregressive.hpp"
 #include "py_autoregressive_real.hpp"
+#include "py_cached_machine.hpp"
 #include "py_configuration.hpp"
 #include "py_ffnn.hpp"
 #include "py_jastrow.hpp"
@@ -155,6 +156,7 @@ void AddMachineModule(py::module &m) {
                      filename: name of file to load parameters from.
            )EOF");
 
+  AddCachedMachine(subm);
   AddRbmSpin(subm);
   AddRbmSpinCache(subm);
   AddRbmSpinSymm(subm);
