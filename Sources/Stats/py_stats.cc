@@ -129,6 +129,17 @@ void AddStatsModule(py::module m) {
                     of Markov Chains. Data should be in row major order.)EOF");
 
   subm.def(
+      "weighted_statistics",
+      [](py::array_t<Complex, py::array::c_style> local_values,
+         py::array_t<double, py::array::c_style> weights) {
+        return WeightedStatistics(
+            Eigen::Map<const Eigen::VectorXcd>{local_values.data(),
+                                               local_values.size()},
+            Eigen::Map<const Eigen::VectorXd>{weights.data(), weights.size()});
+      },
+      py::arg{"values"}.noconvert(), py::arg{"weights"}.noconvert());
+
+  subm.def(
       "covariance_sv",
       [](py::array_t<Complex, py::array::c_style> s_values,
          py::array_t<Complex, py::array::c_style> v_values, bool center_s) {
@@ -199,7 +210,63 @@ void AddStatsModule(py::module m) {
 
         )EOF");
 
+  subm.def(
+      "covariance_weighted_sv",
+      [](py::array_t<Complex, py::array::c_style> s_values,
+         py::array_t<Complex, py::array::c_style> v_values,
+         py::array_t<double, py::array::c_style> w_values, bool center_s) {
+        Eigen::Map<const VectorXcd> s_vector{s_values.data(), s_values.size()};
+        Eigen::Map<const RowMatrix<double>> w_vector{
+            w_values.data(), 1, w_values.shape(0) * w_values.shape(1)};
+
+        // Compute S -> S - 𝔼[S]
+        const Complex mean = [&s_vector, &w_vector, center_s]() -> Complex {
+          if (center_s) {
+            Complex mean = (w_vector * s_vector).sum();
+
+            return mean;
+          } else {
+            return 0.;
+          }
+        }();
+
+        switch (s_values.ndim()) {
+          case 2:
+            NETKET_CHECK(v_values.ndim() == 3, InvalidInputError,
+                         "v_values has wrong dimension: " << v_values.ndim()
+                                                          << "; expected 3.");
+            return product_weighted_sv(
+                s_vector.array() - mean,
+                Eigen::Map<const RowMatrix<Complex>>{
+                    v_values.data(), v_values.shape(0) * v_values.shape(1),
+                    v_values.shape(2)},
+                w_vector);
+          case 1:
+            NETKET_CHECK(v_values.ndim() == 2, InvalidInputError,
+                         "v_values has wrong dimension: " << v_values.ndim()
+                                                          << "; expected 2.");
+            return product_weighted_sv(
+                s_vector.array() - mean,
+                Eigen::Map<const RowMatrix<Complex>>{
+                    v_values.data(), v_values.shape(0), v_values.shape(1)},
+                w_vector);
+          default:
+            NETKET_CHECK(false, InvalidInputError,
+                         "s_values has wrong dimension: "
+                             << s_values.ndim() << "; expected either 1 or 2.");
+        }  // end switch
+      },
+      py::arg{"s"}.noconvert(), py::arg{"v"}.noconvert(),
+      py::arg{"w"}.noconvert(), py::arg{"center_s"} = true);
+
   subm.def("_subtract_mean", &SubtractMean, py::arg{"values"}.noconvert());
+
+  subm.def("_subtract_weighted_mean", &SubtractWeightedMean,
+           py::arg{"values"}.noconvert(), py::arg{"weights"}.noconvert());
+
+  subm.def("_l1_norm", &L1Norm, py::arg{"weights"}.noconvert());
+
+  subm.def("_l2_norm", &L2Norm, py::arg{"weights"}.noconvert());
 }
 }  // namespace detail
 }  // namespace netket

@@ -112,7 +112,7 @@ void AddSamplerModule(py::module& m) {
       .def("__next__",
            [](AbstractSampler& self) {
              self.Sweep();
-             return self.CurrentState().first;
+             return self.CurrentState();
            },
            R"EOF(
       Performs a sampling sweep. Typically a single sweep

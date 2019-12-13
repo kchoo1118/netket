@@ -18,6 +18,7 @@
 #include <cmath>
 #include <nonstd/span.hpp>
 
+#include <iostream>
 #include "Utils/exceptions.hpp"
 #include "Utils/parallel_utils.hpp"
 
@@ -162,6 +163,20 @@ Stats Statistics(Eigen::Ref<const Eigen::VectorXcd> values,
   return Stats{mean, NaN, NaN, NaN, NaN};
 }
 
+Stats WeightedStatistics(Eigen::Ref<const Eigen::VectorXcd> values,
+                         Eigen::Ref<const Eigen::VectorXd> weights) {
+  constexpr auto NaN = std::numeric_limits<double>::quiet_NaN();
+
+  Complex mean = values.dot(weights);
+  SumOnNodes(mean);
+
+  double var = (values.dot((values.array() * weights.array()).matrix())).real();
+  SumOnNodes(var);
+  var -= std::abs(mean) * std::abs(mean);
+
+  return Stats{mean, NaN, var, NaN, NaN};
+}
+
 Eigen::VectorXcd product_sv(Eigen::Ref<const Eigen::VectorXcd> s_values,
                             Eigen::Ref<const RowMatrix<Complex>> v_values) {
   CheckShape(__FUNCTION__, "s_values", {v_values.rows(), v_values.cols()},
@@ -173,11 +188,46 @@ Eigen::VectorXcd product_sv(Eigen::Ref<const Eigen::VectorXcd> s_values,
   return product;
 }
 
+Eigen::VectorXcd product_weighted_sv(
+    Eigen::Ref<const Eigen::VectorXcd> s_values,
+    Eigen::Ref<const RowMatrix<Complex>> v_values,
+    Eigen::Ref<const RowMatrix<double>> weights) {
+  CheckShape(__FUNCTION__, "s_values", {v_values.rows(), v_values.cols()},
+             {s_values.size(), std::ignore});
+  Eigen::VectorXcd product(v_values.cols());
+
+  Eigen::Map<VectorXcd>{product.data(), product.size()}.noalias() =
+      v_values.adjoint() *
+      (s_values.array() * weights.transpose().array()).matrix();
+  SumOnNodes(product);
+
+  return product;
+}
+
 void SubtractMean(Eigen::Ref<RowMatrix<Complex>> v_values) {
   VectorXcd mean = v_values.colwise().mean();
   assert(mean.size() == v_values.cols());
   MeanOnNodes<>(mean);
   v_values.rowwise() -= mean.transpose();
+}
+
+void SubtractWeightedMean(Eigen::Ref<RowMatrix<Complex>> v_values,
+                          Eigen::Ref<const RowMatrix<double>> weights) {
+  VectorXcd mean = v_values.transpose() * weights.transpose();
+  SumOnNodes(mean);
+  v_values.rowwise() -= mean.transpose();
+}
+
+double L1Norm(Eigen::Ref<const RowMatrix<double>> weights) {
+  double total_weight = weights.array().abs().sum();
+  SumOnNodes(total_weight);
+  return total_weight;
+}
+
+double L2Norm(Eigen::Ref<const RowMatrix<double>> weights) {
+  double total_weight = weights.squaredNorm();
+  SumOnNodes(total_weight);
+  return std::sqrt(total_weight);
 }
 
 }  // namespace netket

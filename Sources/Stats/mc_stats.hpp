@@ -42,10 +42,25 @@ struct Stats {
 Stats Statistics(Eigen::Ref<const Eigen::VectorXcd> local_values,
                  Index local_number_chains);
 
+Stats WeightedStatistics(Eigen::Ref<const Eigen::VectorXcd> values,
+                         Eigen::Ref<const Eigen::VectorXd> weights);
+
 Eigen::VectorXcd product_sv(Eigen::Ref<const Eigen::VectorXcd> s_values,
                             Eigen::Ref<const RowMatrix<Complex>> v_values);
 
+Eigen::VectorXcd product_weighted_sv(
+    Eigen::Ref<const Eigen::VectorXcd> s_values,
+    Eigen::Ref<const RowMatrix<Complex>> v_values,
+    Eigen::Ref<const RowMatrix<double>> weights);
+
 void SubtractMean(Eigen::Ref<RowMatrix<Complex>> v_values);
+
+void SubtractWeightedMean(Eigen::Ref<RowMatrix<Complex>> v_values,
+                          Eigen::Ref<const RowMatrix<double>> weights);
+
+double L1Norm(Eigen::Ref<const RowMatrix<double>> weights);
+
+double L2Norm(Eigen::Ref<const RowMatrix<double>> weights);
 
 }  // namespace netket
 

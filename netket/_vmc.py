@@ -201,10 +201,10 @@ class Vmc(object):
             for i, sample in enumerate(self._sampler.samples(self._n_samples_node)):
 
                 # Store the current sample
-                self._samples[i] = sample
+                self._samples[i] = sample[0]
 
                 # Compute Log derivatives
-                self._der_logs[i] = self._machine.der_log(sample)
+                self._der_logs[i] = self._machine.der_log(sample[0])
 
             # Center the log derivatives
             _subtract_mean(self._der_logs)
