@@ -309,6 +309,42 @@ class MetropolisExchange(AbstractSampler):
         self.sampler.machine_func = func
 
 
+class MetropolisExchangeChemistry(AbstractSampler):
+    """
+    """
+
+    def __init__(self, machine, npar, particle_hole, njumps=1, n_chains=16, sweep_size=None, batch_size=None):
+        """
+        """
+        if "_C_netket.machine" in str(type(machine)):
+            self.sampler = c_sampler.MetropolisExchangeChemistry(
+                machine=machine,
+                npar=npar,
+                particle_hole=particle_hole,
+                njumps=njumps,
+                n_chains=n_chains,
+                sweep_size=sweep_size,
+                batch_size=batch_size,
+            )
+        else:
+            print("Error")
+        super().__init__(machine, n_chains)
+
+    def reset(self, init_random=False):
+        self.sampler.reset(init_random)
+
+    def __next__(self):
+        return self.sampler.__next__()
+
+    @property
+    def machine_func(self):
+        return self.sampler.machine_func
+
+    @machine_func.setter
+    def machine_func(self, func):
+        self.sampler.machine_func = func
+
+
 class MetropolisExchangePt(AbstractSampler):
     """
     """

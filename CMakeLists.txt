@@ -262,6 +262,7 @@ set(NETKET_SOURCES
     Sources/Graph/py_graph.cc
     Sources/Hilbert/hilbert_index.cc
     Sources/Hilbert/bosons.cc
+    Sources/Hilbert/fermions.cc
     Sources/Hilbert/spins.cc
     Sources/Hilbert/custom_hilbert.cc
     Sources/Hilbert/py_hilbert.cc

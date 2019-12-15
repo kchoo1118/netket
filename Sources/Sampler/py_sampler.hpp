@@ -50,6 +50,7 @@ pybind11::class_<T, Args...> AddSamplerStats(pybind11::class_<T, Args...> cls) {
 #include "py_custom_sampler.hpp"
 #include "py_exact_sampler.hpp"
 #include "py_metropolis_exchange.hpp"
+#include "py_metropolis_exchange_chemistry.hpp"
 #include "py_metropolis_hamiltonian.hpp"
 #include "py_metropolis_hastings.hpp"
 #include "py_metropolis_hop.hpp"
@@ -189,7 +190,7 @@ void AddSamplerModule(py::module& m) {
   AddExactSampler(subm);
   AddCustomSampler(subm);
   AddMetropolisHastings(subm);
-
+  AddMetropolisExchangeChemistry(subm);
   AddTransitionKernels(subm);
 }
 

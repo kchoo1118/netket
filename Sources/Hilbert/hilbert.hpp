@@ -18,6 +18,7 @@
 #include "Hilbert/abstract_hilbert.hpp"
 #include "Hilbert/bosons.hpp"
 #include "Hilbert/custom_hilbert.hpp"
+#include "Hilbert/fermions.hpp"
 #include "Hilbert/spins.hpp"
 
 #endif
