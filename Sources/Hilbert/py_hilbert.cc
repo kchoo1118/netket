@@ -83,8 +83,9 @@ void AddBosons(py::module subm) {
 void AddFermions(py::module subm) {
   py::class_<Fermions, AbstractHilbert, std::shared_ptr<Fermions>>(
       subm, "Fermions", R"EOF(A fermions hilbert space.)EOF")
-      .def(py::init<const AbstractGraph &, int, bool>(), py::keep_alive<1, 2>(),
-           py::arg("graph"), py::arg("npar"), py::arg("particle_hole"),
+      .def(py::init<const AbstractGraph &, int, bool, bool>(),
+           py::keep_alive<1, 2>(), py::arg("graph"), py::arg("npar"),
+           py::arg("particle_hole"), py::arg("zero_one") = false,
            R"EOF(
            Constructs a new ``Fermions``.
 

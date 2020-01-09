@@ -38,7 +38,8 @@ class Fermions : public AbstractHilbert {
   bool ph_;
 
  public:
-  Fermions(const AbstractGraph &graph, int npar, bool particle_hole);
+  Fermions(const AbstractGraph &graph, int npar, bool particle_hole,
+           bool zero_one);
 
   bool IsDiscrete() const override;
   int LocalSize() const override;

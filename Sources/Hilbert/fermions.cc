@@ -16,7 +16,8 @@
 
 namespace netket {
 
-Fermions::Fermions(const AbstractGraph &graph, int npar, bool particle_hole)
+Fermions::Fermions(const AbstractGraph &graph, int npar, bool particle_hole,
+                   bool zero_one)
     : graph_(graph), npar_(npar), ph_(particle_hole) {
   size_ = graph.Size();
   if (size_ % 2 != 0) {
@@ -24,6 +25,12 @@ Fermions::Fermions(const AbstractGraph &graph, int npar, bool particle_hole)
   }
   if (npar_ % 2 != 0) {
     throw InvalidInputError("Invalid number of particles for spinful fermions");
+  }
+
+  if (zero_one) {
+    local_ = {0, 1};
+  } else {
+    local_ = {-1, 1};
   }
 }
 
@@ -41,18 +48,18 @@ void Fermions::RandomVals(Eigen::Ref<Eigen::VectorXd> state,
 
   assert(state.size() == size_);
 
-  state.setZero();
+  state.setConstant(local_[0]);
   // unconstrained random
   for (int i = 0; i < npar_ / 2; i++) {
-    state(i) = 1;
-    state(i + size_ / 2) = 1;
+    state(i) = local_[1];
+    state(i + size_ / 2) = local_[1];
   }
   std::shuffle(state.data(), state.data() + size_ / 2, rgen);
   std::shuffle(state.data() + size_ / 2, state.data() + size_, rgen);
   if (ph_) {
     for (int i = 0; i < npar_ / 2; i++) {
-      state(i) = state(i) > 0.5 ? 0 : 1;
-      state(size_ / 2 + i) = state(size_ / 2 + i) > 0.5 ? 0 : 1;
+      state(i) = state(i) > 0.5 ? local_[0] : local_[1];
+      state(size_ / 2 + i) = state(size_ / 2 + i) > 0.5 ? local_[0] : local_[1];
     }
   }
 }
