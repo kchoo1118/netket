@@ -85,7 +85,7 @@ void AddFermions(py::module subm) {
       subm, "Fermions", R"EOF(A fermions hilbert space.)EOF")
       .def(py::init<const AbstractGraph &, int, bool, bool>(),
            py::keep_alive<1, 2>(), py::arg("graph"), py::arg("npar"),
-           py::arg("particle_hole"), py::arg("zero_one") = false,
+           py::arg("particle_hole"), py::arg("zero_one") = true,
            R"EOF(
            Constructs a new ``Fermions``.
 
