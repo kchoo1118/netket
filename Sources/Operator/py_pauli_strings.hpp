@@ -32,12 +32,15 @@ void AddPauliStrings(py::module &subm) {
   py::class_<PauliStrings, AbstractOperator, std::shared_ptr<PauliStrings>>(
       subm, "PauliStrings",
       R"EOF(A Hamiltonian consisiting of a product of Pauli operators.)EOF")
-      .def(py::init([](std::vector<std::string> ops,
+      .def(py::init([](std::shared_ptr<const AbstractHilbert> hi,
+                       std::vector<std::string> ops,
                        std::vector<std::complex<double>> opweights,
                        double cutoff) {
-             return PauliStrings{std::move(ops), std::move(opweights), cutoff};
+             return PauliStrings{hi, std::move(ops), std::move(opweights),
+                                 cutoff};
            }),
-           py::arg("operators"), py::arg("weights"), py::arg("cutoff") = 1e-10,
+           py::arg("hilbert"), py::arg("operators"), py::arg("weights"),
+           py::arg("cutoff") = 1e-10,
            R"EOF(
            Constructs a new ``PauliStrings`` operator given a set of Pauli operators.
 

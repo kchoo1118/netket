@@ -33,6 +33,7 @@ class PauliStrings : public AbstractOperator {
 
   std::vector<std::vector<int>> tochange_;
   std::vector<std::vector<Complex>> weights_;
+  std::vector<double> local_;
 
   std::vector<std::vector<std::vector<int>>> zcheck_;
 
@@ -45,7 +46,8 @@ class PauliStrings : public AbstractOperator {
   using VectorRefType = AbstractOperator::VectorRefType;
   using VectorConstRefType = AbstractOperator::VectorConstRefType;
 
-  PauliStrings(const std::vector<std::string> &ops,
+  PauliStrings(std::shared_ptr<const AbstractHilbert> hilbert,
+               const std::vector<std::string> &ops,
                const std::vector<Complex> &opweights, double cutoff);
 
   Edgeless GraphFromOps(const std::vector<std::string> &ops);

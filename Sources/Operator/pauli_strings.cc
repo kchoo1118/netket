@@ -16,11 +16,12 @@
 
 namespace netket {
 
-PauliStrings::PauliStrings(const std::vector<std::string> &ops,
+PauliStrings::PauliStrings(std::shared_ptr<const AbstractHilbert> hilbert,
+                           const std::vector<std::string> &ops,
                            const std::vector<Complex> &opweights,
                            double cutoff = 1e-10)
-    : AbstractOperator(std::make_shared<CustomHilbert>(
-          GraphFromOps(ops), std::vector<double>{0., 1.})),
+    : AbstractOperator(hilbert),
+      local_(GetHilbert().LocalStates()),
       nqubits_(GetHilbert().Size()),
       noperators_(ops.size()),
       I_(Complex(0, 1)),
@@ -107,7 +108,7 @@ void PauliStrings::FindConn(VectorConstRefType v, std::vector<Complex> &mel,
       Complex m_temp = weights_[i][j];
       for (auto k : zcheck_[i][j]) {
         assert(k >= 0 && k < v.size());
-        if (int(std::round(v(k))) == 1) {
+        if (int(std::round(v(k))) == local_[1]) {
           m_temp *= -1.;
         }
       }
@@ -118,10 +119,10 @@ void PauliStrings::FindConn(VectorConstRefType v, std::vector<Complex> &mel,
       int jj = 0;
       for (auto sj : tochange_[i]) {
         assert(sj < v.size() && sj >= 0);
-        if (int(std::round(v(sj))) == 0) {
-          newconf_temp[jj] = 1;
+        if (int(std::round(v(sj))) == local_[0]) {
+          newconf_temp[jj] = local_[1];
         } else {
-          newconf_temp[jj] = 0;
+          newconf_temp[jj] = local_[0];
         }
         jj++;
       }
