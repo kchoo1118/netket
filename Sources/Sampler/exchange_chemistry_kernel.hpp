@@ -33,6 +33,8 @@ class ExchangeChemistryKernel {
 
   bool ph_;
 
+  std::vector<double> local_;
+
   std::uniform_int_distribution<Index> distcl_;
 
  public:
@@ -41,7 +43,8 @@ class ExchangeChemistryKernel {
       : nv_(psi.GetHilbert().Size()),
         npar_(npar),
         ph_(particle_hole),
-        njumps_(njumps) {
+        njumps_(njumps),
+        local_(psi.GetHilbert().LocalStates()) {
     Init();
   }
 
@@ -61,8 +64,9 @@ class ExchangeChemistryKernel {
       for (int k = 0; k < njumps_; ++k) {
         if (ph_) {
           for (int i = 0; i < npar_ / 2; i++) {
-            vnew(r, i) = vnew(r, i) > 0.5 ? 0 : 1;
-            vnew(r, nv_ / 2 + i) = vnew(r, nv_ / 2 + i) > 0.5 ? 0 : 1;
+            vnew(r, i) = vnew(r, i) > 0.5 ? local_[0] : local_[1];
+            vnew(r, nv_ / 2 + i) =
+                vnew(r, nv_ / 2 + i) > 0.5 ? local_[0] : local_[0];
           }
         }
         std::vector<int> occupied;
@@ -77,12 +81,13 @@ class ExchangeChemistryKernel {
         }
         std::shuffle(empty.begin(), empty.end(), GetRandomEngine());
         std::shuffle(occupied.begin(), occupied.end(), GetRandomEngine());
-        vnew(r, empty[0]) = 1;
-        vnew(r, occupied[0]) = 0;
+        vnew(r, empty[0]) = local_[1];
+        vnew(r, occupied[0]) = local_[0];
         if (ph_) {
           for (int i = 0; i < npar_ / 2; i++) {
-            vnew(r, i) = vnew(r, i) > 0.5 ? 0 : 1;
-            vnew(r, nv_ / 2 + i) = vnew(r, nv_ / 2 + i) > 0.5 ? 0 : 1;
+            vnew(r, i) = vnew(r, i) > 0.5 ? local_[0] : local_[1];
+            vnew(r, nv_ / 2 + i) =
+                vnew(r, nv_ / 2 + i) > 0.5 ? local_[0] : local_[1];
           }
         }
       }
