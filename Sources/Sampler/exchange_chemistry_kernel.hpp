@@ -66,7 +66,7 @@ class ExchangeChemistryKernel {
           for (int i = 0; i < npar_ / 2; i++) {
             vnew(r, i) = vnew(r, i) > 0.5 ? local_[0] : local_[1];
             vnew(r, nv_ / 2 + i) =
-                vnew(r, nv_ / 2 + i) > 0.5 ? local_[0] : local_[0];
+                vnew(r, nv_ / 2 + i) > 0.5 ? local_[0] : local_[1];
           }
         }
         std::vector<int> occupied;
