@@ -45,7 +45,6 @@ void AddBosons(py::module subm) {
            Examples:
                Simple boson hilbert space.
 
-               ```python
                >>> from netket.graph import Hypercube
                >>> from netket.hilbert import Boson
                >>> g = Hypercube(length=10,n_dim=2,pbc=True)
@@ -53,7 +52,6 @@ void AddBosons(py::module subm) {
                >>> print(hi.size)
                100
 
-               ```
            )EOF")
       .def(py::init<const AbstractGraph &, int, int>(), py::keep_alive<1, 2>(),
            py::arg("graph"), py::arg("n_max"), py::arg("n_bosons"), R"EOF(
@@ -68,7 +66,6 @@ void AddBosons(py::module subm) {
            Examples:
                Simple boson hilbert space.
 
-               ```python
                >>> from netket.graph import Hypercube
                >>> from netket.hilbert import Boson
                >>> g = Hypercube(length=10,n_dim=2,pbc=True)
@@ -76,7 +73,6 @@ void AddBosons(py::module subm) {
                >>> print(hi.size)
                100
 
-               ```
            )EOF");
 }
 
@@ -108,7 +104,6 @@ void AddCustomHilbert(py::module subm) {
            Examples:
                Simple custom hilbert space.
 
-               ```python
                >>> from netket.graph import Hypercube
                >>> from netket.hilbert import CustomHilbert
                >>> g = Hypercube(length=10,n_dim=2,pbc=True)
@@ -116,7 +111,6 @@ void AddCustomHilbert(py::module subm) {
                >>> print(hi.size)
                100
 
-               ```
            )EOF");
 }
 
@@ -134,7 +128,6 @@ void AddSpins(py::module subm) {
            Examples:
                Simple spin hilbert space.
 
-               ```python
                >>> from netket.graph import Hypercube
                >>> from netket.hilbert import Spin
                >>> g = Hypercube(length=10,n_dim=2,pbc=True)
@@ -142,7 +135,6 @@ void AddSpins(py::module subm) {
                >>> print(hi.size)
                100
 
-               ```
            )EOF")
       .def(py::init<const AbstractGraph &, double, double>(),
            py::keep_alive<1, 2>(), py::arg("graph"), py::arg("s"),
@@ -152,12 +144,11 @@ void AddSpins(py::module subm) {
            Args:
                graph: Graph representation of sites.
                s: Spin at each site. Must be integer or half-integer.
-               total_sz: Constrain total spin of system to a particular value.
+               total_sz: If given, constrains the total spin of system to a particular value.
 
            Examples:
                Simple spin hilbert space.
 
-               ```python
                >>> from netket.graph import Hypercube
                >>> from netket.hilbert import Spin
                >>> g = Hypercube(length=10,n_dim=2,pbc=True)
@@ -165,7 +156,6 @@ void AddSpins(py::module subm) {
                >>> print(hi.size)
                100
 
-               ```
            )EOF");
 }
 }  // namespace
@@ -223,7 +213,6 @@ void AddHilbertModule(py::module m) {
            Test that a new random state is a possible state for the hilbert
            space.
 
-           ```python
            >>> import netket as nk
            >>> import numpy as np
            >>> hi = nk.hilbert.Boson(n_max=3, graph=nk.graph.Hypercube(length=5, n_dim=1))
@@ -234,7 +223,6 @@ void AddHilbertModule(py::module m) {
            >>> print(rstate[0] in local_states)
            True
 
-           ```
        )EOF")
           .def(
               "update_conf",

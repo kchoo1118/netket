@@ -52,13 +52,11 @@ void AddPauliStrings(py::module &subm) {
            Examples:
                Constructs a new ``PauliOperator`` operator.
 
-               ```python
                >>> import netket as nk
                >>> op = nk.operator.PauliStrings(operators=['XX','ZZ'], weights=[1,1])
                >>> op.hilbert.size
                2
 
-               ```
          )EOF");
 }
 

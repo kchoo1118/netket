@@ -109,7 +109,6 @@ class Vmc(object):
 
     def iter(self, n_iter=None, step_size=1):
         """
-        iter(self: Vmc, n_iter: int=None, step_size: int=1) -> int
 
         Returns a generator which advances the VMC optimization, yielding
         after every step_size steps up to n_iter.
@@ -136,8 +135,6 @@ def estimate_expectations(
     ops, sampler, n_samples, n_discard=None, compute_gradients=False
 ):
     """
-    estimate_expectation(op: AbstractOperator, sampler: AbstractSampler, n_samples: int, compute_gradients: bool=False) -> Stats
-
     For a sequence of linear operators, computes a statistical estimate of the
     respective expectation values, variances, and optionally gradients of the
     expectation values with respect to the variational parameters.
@@ -162,7 +159,7 @@ def estimate_expectations(
                   as ndarray of shape `(psi.n_par,)`, for each `op` in `ops`.
     """
 
-    from ._C_netket import operator as nop
+    from netket.operator import local_values as _local_values
     from ._C_netket import stats as nst
 
     psi = sampler.machine
@@ -176,7 +173,7 @@ def estimate_expectations(
     # Generate samples
     samples = sampler.generate_samples(n_samples)
 
-    local_values = [nop.local_values(op, psi, samples) for op in ops]
+    local_values = [_local_values(op, psi, samples) for op in ops]
     stats = [nst.statistics(lv) for lv in local_values]
 
     if compute_gradients:
