@@ -48,6 +48,16 @@ class ExchangeChemistryKernel {
     Init();
   }
 
+  explicit ExchangeChemistryKernel(const AbstractHilbert &hilb, int npar,
+                                   bool particle_hole, int njumps)
+      : nv_(hilb.Size()),
+        npar_(npar),
+        ph_(particle_hole),
+        njumps_(njumps),
+        local_(hilb.LocalStates()) {
+    Init();
+  }
+
   void Init() {
     distcl_ = std::uniform_int_distribution<Index>(0, nv_ / 2 - 1);
 

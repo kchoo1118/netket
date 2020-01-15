@@ -27,6 +27,7 @@
 #include "Utils/parallel_utils.hpp"
 #include "Utils/pybind_helpers.hpp"
 
+#include "exchange_chemistry_kernel.hpp"
 #include "local_kernel.hpp"
 
 namespace py = pybind11;
@@ -43,6 +44,13 @@ void AddTransitionKernels(py::module &subm) {
       .def(py::init<const AbstractHilbert &, Index>(), py::arg("hilbert"),
            py::arg("d_max"))
       .def("__call__", &ExchangeKernel::operator(), py::arg("v"),
+           py::arg("v_prime"), py::arg("log_acceptance_correction"));
+
+  py::class_<ExchangeChemistryKernel>(subm, "ExchangeChemistryKernel")
+      .def(py::init<const AbstractHilbert &, int, bool, int>(),
+           py::arg("hilbert"), py::arg("npar"), py::arg("particle_hole"),
+           py::arg("njumps"))
+      .def("__call__", &ExchangeChemistryKernel::operator(), py::arg("v"),
            py::arg("v_prime"), py::arg("log_acceptance_correction"));
 
   py::class_<HamiltonianKernel>(subm, "HamiltonianKernel")
