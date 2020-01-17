@@ -206,7 +206,7 @@ class Vmc(object):
 
             # Generate samples and store them
             for i, sample in enumerate(self._sampler.samples(self._n_samples_node)):
-                self._samples[i] = sample
+                self._samples[i] = sample[0]
 
             # Compute the local energy estimator and average Energy
             eloc, self._stats = self._get_mc_stats(self._ham)

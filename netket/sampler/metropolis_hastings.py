@@ -140,7 +140,7 @@ class PyMetropolisHastings(AbstractSampler):
                 accept, self._log_values_1, self._log_values)
             self._state = _np.where(
                 accept.reshape(-1, 1), self._state1, self._state)
-        return self._state
+        return self._state, self._log_values
 
 
 class MetropolisLocal(AbstractSampler):
