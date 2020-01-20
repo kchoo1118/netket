@@ -177,8 +177,12 @@ NetKet/GroundState/py_exact.hpp
 NetKet/GroundState/py_ground_state.hpp
 NetKet/GroundState/py_variational_montecarlo.hpp
 NetKet/GroundState/py_variational_montecarlo_bias.hpp
+NetKet/GroundState/py_variational_montecarlo_cache.hpp
+NetKet/GroundState/py_variational_montecarlo_exact.hpp
 NetKet/GroundState/variational_montecarlo.hpp
 NetKet/GroundState/variational_montecarlo_bias.hpp
+NetKet/GroundState/variational_montecarlo_cache.hpp
+NetKet/GroundState/variational_montecarlo_exact.hpp
 NetKet/Headers/apply_license.sh
 NetKet/Headers/header.hpp
 NetKet/Headers/header.py
@@ -199,6 +203,8 @@ NetKet/Hilbert/spins.hpp
 NetKet/Machine/abstract_machine.hpp
 NetKet/Machine/autoregressive_machine.hpp
 NetKet/Machine/autoregressive_real_machine.hpp
+NetKet/Machine/cached_machine.hpp
+NetKet/Machine/configuration.hpp
 NetKet/Machine/ffnn.hpp
 NetKet/Machine/jastrow.hpp
 NetKet/Machine/jastrow_symm.hpp
@@ -211,6 +217,8 @@ NetKet/Machine/pair_product_symm.hpp
 NetKet/Machine/product_machine.hpp
 NetKet/Machine/py_autoregressive.hpp
 NetKet/Machine/py_autoregressive_real.hpp
+NetKet/Machine/py_cached_machine.hpp
+NetKet/Machine/py_configuration.hpp
 NetKet/Machine/py_ffnn.hpp
 NetKet/Machine/py_jastrow.hpp
 NetKet/Machine/py_jastrow_symm.hpp
@@ -223,6 +231,7 @@ NetKet/Machine/py_pair_product_symm.hpp
 NetKet/Machine/py_product_machine.hpp
 NetKet/Machine/py_rbm_multival.hpp
 NetKet/Machine/py_rbm_spin.hpp
+NetKet/Machine/py_rbm_spin_cache.hpp
 NetKet/Machine/py_rbm_spin_chem.hpp
 NetKet/Machine/py_rbm_spin_phase.hpp
 NetKet/Machine/py_rbm_spin_real.hpp
@@ -230,6 +239,7 @@ NetKet/Machine/py_rbm_spin_symm.hpp
 NetKet/Machine/py_sum_machine.hpp
 NetKet/Machine/rbm_multival.hpp
 NetKet/Machine/rbm_spin.hpp
+NetKet/Machine/rbm_spin_cache.hpp
 NetKet/Machine/rbm_spin_chem.hpp
 NetKet/Machine/rbm_spin_phase.hpp
 NetKet/Machine/rbm_spin_real.hpp
@@ -288,6 +298,7 @@ NetKet/Optimizer/py_sgd.hpp
 NetKet/Optimizer/rms_prop.hpp
 NetKet/Optimizer/sgd.hpp
 NetKet/Optimizer/stochastic_reconfiguration.hpp
+NetKet/Optimizer/stochastic_reconfiguration_exact.hpp
 NetKet/Output/json_output_writer.hpp
 NetKet/Output/py_output.hpp
 NetKet/Sampler/abstract_sampler.hpp
@@ -298,6 +309,7 @@ NetKet/Sampler/exact_sampler.hpp
 NetKet/Sampler/metropolis_exchange.hpp
 NetKet/Sampler/metropolis_exchange_chemistry.hpp
 NetKet/Sampler/metropolis_exchange_chemistry_bias.hpp
+NetKet/Sampler/metropolis_exchange_chemistry_fttc.hpp
 NetKet/Sampler/metropolis_exchange_pt.hpp
 NetKet/Sampler/metropolis_hamiltonian.hpp
 NetKet/Sampler/metropolis_hamiltonian_pt.hpp
@@ -311,6 +323,7 @@ NetKet/Sampler/py_exact_sampler.hpp
 NetKet/Sampler/py_metropolis_exchange.hpp
 NetKet/Sampler/py_metropolis_exchange_chemistry.hpp
 NetKet/Sampler/py_metropolis_exchange_chemistry_bias.hpp
+NetKet/Sampler/py_metropolis_exchange_chemistry_fttc.hpp
 NetKet/Sampler/py_metropolis_exchange_pt.hpp
 NetKet/Sampler/py_metropolis_hamiltonian.hpp
 NetKet/Sampler/py_metropolis_hamiltonian_pt.hpp

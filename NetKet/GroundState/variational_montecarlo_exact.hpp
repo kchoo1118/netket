@@ -27,6 +27,7 @@
 
 #include "Hilbert/abstract_hilbert.hpp"
 #include "Machine/machine.hpp"
+#include "Operator/MatrixWrapper/matrix_wrapper.hpp"
 #include "Operator/abstract_operator.hpp"
 #include "Optimizer/optimizer.hpp"
 #include "Optimizer/stochastic_reconfiguration.hpp"
@@ -88,6 +89,8 @@ class VariationalMonteCarloExact {
 
   int division_;
 
+  SparseMatrixWrapper<> matrix;
+
  public:
   class Iterator {
    public:
@@ -148,7 +151,8 @@ class VariationalMonteCarloExact {
         elocvar_(0.),
         hilbert_(psi.GetHilbert()),
         hilbert_index_(hilbert_),
-        dim_(hilbert_index_.NStates()) {
+        dim_(hilbert_index_.NStates()),
+        matrix(ham_) {
     Init(method, diag_shift, use_iterative, use_cholesky);
   }
 
@@ -357,6 +361,8 @@ class VariationalMonteCarloExact {
       auto obs_data = json(obsmanager_);
       obs_data["GradNorm"] = grad_.norm();
       obs_data["UpdateNorm"] = deltap_.norm();
+      obs_data["ElocMean"] = matrix.Mean(psivals_);
+      obs_data["ElocVar"] = matrix.MeanVariance(psivals_);
 
       // writer.has_value() iff the MPI rank is 0, so the output is only
       // written once

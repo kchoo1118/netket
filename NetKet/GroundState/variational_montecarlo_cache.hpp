@@ -387,6 +387,7 @@ class VariationalMonteCarloCache {
       obs_data["NumUniqueSamples"] = total_unique_samples_;
       obs_data["GradNorm"] = grad_.norm();
       obs_data["UpdateNorm"] = deltap_.norm();
+      obs_data["ElocMean"] = elocmean_;
 
       // writer.has_value() iff the MPI rank is 0, so the output is only
       // written once
