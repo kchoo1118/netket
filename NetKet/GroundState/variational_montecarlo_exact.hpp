@@ -356,13 +356,24 @@ class VariationalMonteCarloExact {
     for (const auto step : Iterate(n_iter, step_size, clip)) {
       ComputeObservables();
 
+      Complex exact_mean;
+      Comples exact_var;
+      if (mynode_ == 0) {
+        std::array<Complex, 2> mv = matrix.MeanVariance(psivals_);
+        exact_mean = mv[0];
+        exact_var = mv[1];
+      }
+      MPI_Barrier(MPI_COMM_WORLD);
+      SendToAll(exact_mean);
+      SendToAll(exact_var);
+
       // Note: This has to be called in all MPI processes, because converting
       // the ObsManager to JSON performs a MPI reduction.
       auto obs_data = json(obsmanager_);
       obs_data["GradNorm"] = grad_.norm();
       obs_data["UpdateNorm"] = deltap_.norm();
-      obs_data["ElocMean"] = matrix.Mean(psivals_);
-      obs_data["ElocVar"] = matrix.MeanVariance(psivals_);
+      obs_data["ElocMean"] = exact_mean;
+      obs_data["ElocVar"] = exact_var;
 
       // writer.has_value() iff the MPI rank is 0, so the output is only
       // written once
