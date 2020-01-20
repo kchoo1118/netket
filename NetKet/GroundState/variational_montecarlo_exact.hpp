@@ -357,7 +357,7 @@ class VariationalMonteCarloExact {
       ComputeObservables();
 
       Complex exact_mean;
-      Comples exact_var;
+      Complex exact_var;
       if (mynode_ == 0) {
         std::array<Complex, 2> mv = matrix.MeanVariance(psivals_);
         exact_mean = mv[0];
