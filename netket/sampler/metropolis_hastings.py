@@ -52,7 +52,8 @@ class PyMetropolisHastings(AbstractSampler):
 
         self._kernel = transition_kernel
 
-        self.machine_func = lambda x, out=None: _np.square(_np.absolute(x), out)
+        self.machine_func = lambda x, out=None: _np.square(
+            _np.absolute(x), out)
 
         super().__init__(machine, n_chains)
 
@@ -127,15 +128,18 @@ class PyMetropolisHastings(AbstractSampler):
 
             # Acceptance probability
             self._prob = self.machine_func(
-                _np.exp(self._log_values_1 - self._log_values + self._log_prob_corr)
+                _np.exp(self._log_values_1 -
+                        self._log_values + self._log_prob_corr)
             )
 
             # Acceptance test
             accept = self._prob > self._rand_for_acceptance[sweep]
 
             # Update of the state
-            self._log_values = _np.where(accept, self._log_values_1, self._log_values)
-            self._state = _np.where(accept.reshape(-1, 1), self._state1, self._state)
+            self._log_values = _np.where(
+                accept, self._log_values_1, self._log_values)
+            self._state = _np.where(
+                accept.reshape(-1, 1), self._state1, self._state)
         return self._state
 
 
@@ -312,7 +316,7 @@ class MetropolisExchangePt(AbstractSampler):
     """
 
     def __init__(
-        self, machine, d_max=1, n_replicas=16, sweep_size=None, batch_size=None
+        self, machine, d_max=1, n_replicas=16, sweep_size=None
     ):
         """
         """
@@ -321,8 +325,7 @@ class MetropolisExchangePt(AbstractSampler):
                 machine=machine,
                 n_replicas=n_replicas,
                 d_max=d_max,
-                sweep_size=sweep_size,
-                batch_size=batch_size,
+                sweep_size=sweep_size
             )
         else:
             raise ValueError(
