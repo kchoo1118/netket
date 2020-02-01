@@ -16,6 +16,7 @@
 
 #include <complex>
 #include <limits>
+#include <string>
 #include <vector>
 
 #include <pybind11/complex.h>
@@ -26,6 +27,7 @@
 
 #include "DensityMatrices/py_density_matrix.hpp"
 #include "Machine/ffnn.hpp"
+#include "Machine/j1j2_machine.hpp"
 #include "Machine/jastrow.hpp"
 #include "Machine/jastrow_symm.hpp"
 #include "Machine/mps_periodic.hpp"
@@ -279,6 +281,50 @@ void AddFFNN(py::module subm) {
               )EOF");
 }
 
+void AddJ1J2(py::module subm) {
+  py::class_<J1J2Machine, AbstractMachine>(subm, "J1J2Machine", R"EOF(
+             A feedforward neural network (FFNN) Machine. This machine is
+             constructed by providing a sequence of layers from the ``layer``
+             class. Each layer implements a transformation such that the
+             information is transformed sequentially as it moves from the input
+             nodes through the hidden layers and to the output nodes.)EOF")
+      .def(py::init([](std::shared_ptr<const AbstractHilbert> hi,
+                       py::tuple tuple, int l, int c4, std::string rottype) {
+             auto layers = py::cast<std::vector<AbstractLayer *>>(tuple);
+             return J1J2Machine{std::move(hi), std::move(layers), l, c4,
+                                rottype};
+           }),
+           py::keep_alive<1, 3>(), py::arg("hilbert"), py::arg("layers"),
+           py::arg("l"), py::arg("c4"), py::arg("rot_type"),
+           R"EOF(
+              Constructs a new ``FFNN`` machine:
+
+              Args:
+                  hilbert: Hilbert space object for the system.
+                  layers: Tuple of layers.
+
+              Examples:
+                  A ``FFNN`` machine with 2 layers.
+                  for a one-dimensional L=20 spin-half system:
+
+
+                  >>> from netket.layer import SumOutput
+                  >>> from netket.layer import FullyConnected
+                  >>> from netket.layer import Lncosh
+                  >>> from netket.hilbert import Spin
+                  >>> from netket.graph import Hypercube
+                  >>> from netket.machine import FFNN
+                  >>> g = Hypercube(length=20, n_dim=1)
+                  >>> hi = Spin(s=0.5, total_sz=0, graph=g)
+                  >>> layers = (FullyConnected(input_size=20,output_size=20,use_bias=True),Lncosh(input_size=20),SumOutput(input_size=20))
+                  >>> ma = FFNN(hi, layers)
+                  >>> print(ma.n_par)
+                  420
+
+
+              )EOF");
+}
+
 void AddJastrow(py::module subm) {
   py::class_<Jastrow, AbstractMachine>(subm, "Jastrow", R"EOF(
            A Jastrow wavefunction Machine. This machine defines the following
@@ -458,6 +504,25 @@ void AddLayerModule(py::module m) {
              )EOF");
   }
   {
+    using DerType = J1J2Convolutional;
+    py::class_<DerType, AbstractLayer>(subm, "J1J2Convolutional", R"EOF(
+             A convolutional feedforward layer for hypercubes. This layer
+             works only for the ``Hypercube`` graph defined in ``graph``.
+             This layer implements the standard convolution with periodic
+             boundary conditions.)EOF")
+        .def(py::init<const AbstractHilbert &, int, int, int>(),
+             py::arg("hilbert"), py::arg("input_channels"),
+             py::arg("output_channels"), py::arg("dist") = 2, R"EOF(
+             Constructs a new ``Convolutional`` layer.
+
+             Args:
+                 hilbert: hilbert space.
+                 input_channels: Number of input channels.
+                 output_channels: Number of output channels.
+                 dist: kernel distance.
+             )EOF");
+  }
+  {
     using DerType = SumOutput;
     py::class_<DerType, AbstractLayer>(subm, "SumOutput", R"EOF(
              A feedforward layer which sums the inputs to give a single output.)EOF")
@@ -623,15 +688,14 @@ void AddAbstractMachine(py::module m) {
                      newconf: list containing the new (changed) values at the
                          indices specified in tochange
            )EOF")
-      .def(
-          "der_log_diff",
-          [](AbstractMachine &self, AbstractMachine::VisibleConstType v,
-             const std::vector<std::vector<int>> &tochange,
-             const std::vector<std::vector<double>> &newconfs) {
-            return py::cast(self.LogValDiff(v, tochange, newconfs));
-          },
-          py::arg("v"), py::arg("tochange"), py::arg("newconfs"),
-          R"EOF(
+      .def("der_log_diff",
+           [](AbstractMachine &self, AbstractMachine::VisibleConstType v,
+              const std::vector<std::vector<int>> &tochange,
+              const std::vector<std::vector<double>> &newconfs) {
+             return py::cast(self.LogValDiff(v, tochange, newconfs));
+           },
+           py::arg("v"), py::arg("tochange"), py::arg("newconfs"),
+           R"EOF(
                  Member function to obtain the differences in der_log of machine
                  given an input and a change to the input.
 
@@ -804,6 +868,7 @@ void AddMachineModule(py::module m) {
   AddJastrowSymm(subm);
   AddMpsPeriodic(subm);
   AddFFNN(subm);
+  AddJ1J2(subm);
   AddLayerModule(m);
   AddDensityMatrixModule(subm);
 }

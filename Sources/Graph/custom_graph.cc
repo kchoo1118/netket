@@ -21,10 +21,12 @@
 namespace netket {
 
 CustomGraph::CustomGraph(std::vector<Edge> edges, ColorMap colors,
-                         std::vector<std::vector<int>> automorphisms)
+                         std::vector<std::vector<int>> automorphisms,
+                         std::vector<std::vector<int>> adjacencylist)
     : edges_{std::move(edges)},
       eclist_{std::move(colors)},
-      automorphisms_{std::move(automorphisms)} {
+      automorphisms_{std::move(automorphisms)},
+      adjacencylist_{std::move(adjacencylist)} {
   n_sites_ = CheckEdges();
   if (n_sites_ == 0) {
     throw InvalidInputError{"Empty graphs are not supported."};
@@ -44,6 +46,9 @@ CustomGraph::CustomGraph(std::vector<Edge> edges, ColorMap colors,
     std::iota(std::begin(automorphisms_.front()),
               std::end(automorphisms_.front()), 0);
   }
+  if (adjacencylist_.empty()) {
+    adjacencylist_ = detail::AdjacencyListFromEdges(Edges(), Nsites());
+  }
   is_connected_ = IsConnected();
   is_bipartite_ = IsBipartite();
 }
@@ -57,7 +62,7 @@ std::vector<CustomGraph::Edge> const &CustomGraph::Edges() const noexcept {
 }
 
 std::vector<std::vector<int>> CustomGraph::AdjacencyList() const {
-  return detail::AdjacencyListFromEdges(Edges(), Nsites());
+  return adjacencylist_;
 }
 
 const CustomGraph::ColorMap &CustomGraph::EdgeColors() const noexcept {

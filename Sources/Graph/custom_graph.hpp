@@ -34,10 +34,13 @@ class CustomGraph : public AbstractGraph {
   bool is_connected_;        ///< Whether the graph is connected
   bool is_bipartite_;        ///< Whether the graph is bipartite
   std::vector<std::vector<int>> automorphisms_;
+  std::vector<std::vector<int>> adjacencylist_;
 
  public:
   CustomGraph(std::vector<Edge> edges, ColorMap colors = ColorMap(),
               std::vector<std::vector<int>> automorphisms =
+                  std::vector<std::vector<int>>(),
+              std::vector<std::vector<int>> adjacencylist =
                   std::vector<std::vector<int>>());
 
   void Init();
