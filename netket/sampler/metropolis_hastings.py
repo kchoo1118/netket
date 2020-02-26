@@ -346,6 +346,10 @@ class MetropolisExchangeChemistry(AbstractSampler):
         return self.sampler.__next__()
 
     @property
+    def acceptance(self):
+        return self.sampler.acceptance
+
+    @property
     def machine_func(self):
         return self.sampler.machine_func
 
