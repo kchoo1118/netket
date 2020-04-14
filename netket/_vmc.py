@@ -79,7 +79,6 @@ def make_optimizer_fn(arg, ma):
             + " or callable f(i, grad, p); got {}".format(arg)
         )
 
-
 class Vmc(object):
     """
     Energy minimization using Variational Monte Carlo (VMC).

@@ -119,9 +119,10 @@ void AddSamplerModule(py::module& m) {
       Performs a sampling sweep. Typically a single sweep
       consists of an extensive number of local moves.
       )EOF")
-      .def_property_readonly(
+      .def_property(
           "visible",
           [](const AbstractSampler& self) { return self.CurrentState().first; },
+          &AbstractSampler::SetVisible,
           R"EOF(A matrix of current visible configurations. Every row
                 corresponds to a visible configuration)EOF")
       .def_property_readonly(

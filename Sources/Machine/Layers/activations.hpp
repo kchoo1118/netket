@@ -110,6 +110,69 @@ class Lncosh : public AbstractActivation {
   }
 };
 
+class Ln : public AbstractActivation {
+  using VectorType = typename AbstractActivation::VectorType;
+
+ public:
+  std::string name = "Ln";
+  // A = Ln(Z)
+  inline void operator()(VectorConstRefType Z, VectorRefType A) const override {
+    A.array() = Z.array().log();
+  }
+
+  // Apply the (derivative of activation function) matrix J to a vector F
+  // A = Ln(Z)
+  // J = dA / dZ
+  // G = J * F
+  inline void ApplyJacobian(VectorConstRefType Z, VectorConstRefType /*A*/,
+                            VectorConstRefType F,
+                            VectorRefType G) const override {
+    G.array() = F.array() * Z.array().inverse();
+  }
+};
+
+class Cosh : public AbstractActivation {
+  using VectorType = typename AbstractActivation::VectorType;
+
+ public:
+  std::string name = "Cosh";
+  // A = Cosh(Z)
+  inline void operator()(VectorConstRefType Z, VectorRefType A) const override {
+    A.array() = Z.array().cosh();
+  }
+
+  // Apply the (derivative of activation function) matrix J to a vector F
+  // A = Cosh(Z)
+  // J = dA / dZ
+  // G = J * F
+  inline void ApplyJacobian(VectorConstRefType Z, VectorConstRefType /*A*/,
+                            VectorConstRefType F,
+                            VectorRefType G) const override {
+    G.array() = F.array() * Z.array().sinh();
+  }
+};
+
+class Exp : public AbstractActivation {
+  using VectorType = typename AbstractActivation::VectorType;
+
+ public:
+  std::string name = "Exp";
+  // A = Exp(Z)
+  inline void operator()(VectorConstRefType Z, VectorRefType A) const override {
+    A.array() = Z.array().exp();
+  }
+
+  // Apply the (derivative of activation function) matrix J to a vector F
+  // A = Exp(Z)
+  // J = dA / dZ
+  // G = J * F
+  inline void ApplyJacobian(VectorConstRefType Z, VectorConstRefType /*A*/,
+                            VectorConstRefType F,
+                            VectorRefType G) const override {
+    G.array() = F.array() * Z.array().exp();
+  }
+};
+
 class Tanh : public AbstractActivation {
   using VectorType = typename AbstractActivation::VectorType;
 

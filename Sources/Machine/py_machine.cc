@@ -532,6 +532,78 @@ void AddLayerModule(py::module m) {
         )EOF");
   }
   {
+    using DerType = Activation<Ln>;
+    py::class_<DerType, AbstractLayer>(subm, "Ln", R"EOF(
+             An activation layer which applies Ln to each input.)EOF")
+        .def(py::init<int>(), py::arg("input_size"), R"EOF(
+        Constructs a new ``Ln`` activation layer.
+
+        Args:
+            input_size: Size of input.
+
+        Examples:
+            A ``Ln`` activation layer which applies the Ln function
+            coefficient-wise to a 10-dimensional input:
+
+            ```python
+            >>> from netket.layer import Ln
+            >>> l=Ln(input_size=10)
+            >>> print(l.n_par)
+            0
+
+            ```
+        )EOF");
+  }
+
+  {
+    using DerType = Activation<Cosh>;
+    py::class_<DerType, AbstractLayer>(subm, "Cosh", R"EOF(
+             An activation layer which applies Cosh to each input.)EOF")
+        .def(py::init<int>(), py::arg("input_size"), R"EOF(
+        Constructs a new ``Cosh`` activation layer.
+
+        Args:
+            input_size: Size of input.
+
+        Examples:
+            A ``Cosh`` activation layer which applies the Ln function
+            coefficient-wise to a 10-dimensional input:
+
+            ```python
+            >>> from netket.layer import Cosh
+            >>> l=Cosh(input_size=10)
+            >>> print(l.n_par)
+            0
+
+            ```
+        )EOF");
+  }
+
+  {
+    using DerType = Activation<Exp>;
+    py::class_<DerType, AbstractLayer>(subm, "Exp", R"EOF(
+             An activation layer which applies Exp to each input.)EOF")
+        .def(py::init<int>(), py::arg("input_size"), R"EOF(
+        Constructs a new ``Exp`` activation layer.
+
+        Args:
+            input_size: Size of input.
+
+        Examples:
+            A ``Exp`` activation layer which applies the Exp function
+            coefficient-wise to a 10-dimensional input:
+
+            ```python
+            >>> from netket.layer import Exp
+            >>> l=Exp(input_size=10)
+            >>> print(l.n_par)
+            0
+
+            ```
+        )EOF");
+  }
+
+  {
     using DerType = Activation<Relu>;
     py::class_<DerType, AbstractLayer>(subm, "Relu", R"EOF(
              An activation layer which applies ReLu to each input.)EOF")
